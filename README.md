@@ -2,15 +2,13 @@
 
 NodeJS tool for generating Express middleware that formats and enforces a parameter scheme
 
-## Install
-
-`npm install needs-params`
+## Install `npm install needs-params`
     
 ## Usage
 
 ### Initialization
 
-    var needs = require('needs-params')(options)
+var needs = require('needs-params')(options)
 
 #### `options`
 `strict` 	- Returns an error when unexpected parameters are received, default `true`
