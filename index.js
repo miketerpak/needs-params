@@ -1,14 +1,11 @@
-'use strict';
-
-var bodyParser = require('bodyParser');
+'use strict'
 
 /**
- * TODO update to es6
  * TODO implement bodyparser
  * 
  * How to use:
  * 
- * Module takes in scheme, returns middleware for parameter validation;
+ * Module takes in scheme, returns middleware for parameter validation
  * 
  * Scheme: { key_: type[4] }
  *  key         - field name
@@ -18,104 +15,103 @@ var bodyParser = require('bodyParser');
  * [x]          - parameter is an array of fixed length x
  */
 
-var error = Error || function (msg) { return { message: msg }; };
-var mutators = { // Mutators return undefined when values are invalid
-    int: function (v) {
-        if (isNaN(v)) return undefined;
-        return parseInt(v, 10);
+let mutators = { // Mutators return undefined when values are invalid
+    int: v => {
+        if (isNaN(v)) return
+        return parseInt(v, 10)
     },
-    bool: function (v) {
-        v = String(v).toLowerCase();
+    bool: v => {
+        v = String(v).toLowerCase()
         switch (v) {
             case 't':
             case 'true':
             case '1':
-                return true;
+                return true
             case 'f':
             case 'false':
             case '0':
             case '-1':
-                return false;
+                return false
             default:
-                return undefined;
+                return
         }
     },
-    str: function (v) {
-        if (typeof v === 'object') return undefined;
-        return String(v);
+    str: v => {
+        if (typeof v === 'object') return
+        return String(v)
     },
-    float: function (v) {
-        if (isNaN(v)) return undefined;
-        return parseFloat(v);
+    float: v => {
+        if (isNaN(v)) return
+        return parseFloat(v)
     },
-    datetime: function (v) {
+    datetime: v => {
         if (typeof v === 'string') {
-            var result = Date.parse(v);
-            if (isNaN(result)) return undefined;
-            return result;
+            let result = Date.parse(v)
+            if (isNaN(result)) return
+            return result
         } else if (typeof v === 'number' && v >= 0) {
-            return new Date(v);
+            return new Date(v)
         } else {
-            return undefined;
+            return undefined
         }
     },
-};
+}
 // Aliases
-mutators.integer = mutators.int;
-mutators.boolean = mutators.bool;
-mutators.string = mutators.str;
-mutators.number = mutators.numeric = mutatots.num = mutators.float;
-mutators.date = mutators.time = mutators.timestamp = mutators.datetime;
+mutators.integer = mutators.int
+mutators.boolean = mutators.bool
+mutators.string = mutators.str
+mutators.number = mutators.numeric = mutators.num = mutators.float
+mutators.date = mutators.time = mutators.timestamp = mutators.datetime
 
 // Builds the scheme object that is used by needs to validate and format incoming parameters
 function buildScheme(_scheme, _parent) {
-    var scheme = {};
+    let scheme = {}
     
-    for (var key in _scheme) {
-        var current_key = _parent ? _parent + '['+key+']' : key;
-        var definition = _scheme[key];
-        var options = { type: null, mutator: null, is_arr: false, arr_len: null,  required: true };
-        var lastCharIndex = definition.length - 1;
+    for (let key in _scheme) {
+        let current_key = _parent ? _parent + '['+key+']' : key
+        let definition = _scheme[key]
+        let options = { type: null, mutator: null, is_arr: false, arr_len: null,  required: true }
+        let lastCharIndex = definition.length - 1
         
         if (typeof definition === 'function') {
             // NOTE Custom mutators must return UNDEFINED on invalid value
-            options.type = 'mutator';
-            options.mutator = definition;
+            options.type = 'mutator'
+            options.mutator = definition
         } else if (typeof definition === 'object') {
-            options.type = buildScheme(definition, current);
+            options.type = buildScheme(definition, current_key)
         } else if (typeof definition === 'string') {
             if (definition[lastCharIndex] === ']') {
-                var arrBegin = definition.indexOf('[');
-                options.is_arr = true;
+                let arrBegin = definition.indexOf('[')
+                options.is_arr = true
                 
                 if (lastCharIndex - arrBegin > 1) {
-                    var arrlen = definition.substr(arrBegin+1, lastCharIndex - arrBegin - 1);
+                    let arrlen = definition.substr(arrBegin+1, lastCharIndex - arrBegin - 1)
                     if (arrlen) {
-                        if (isNaN(arrlen)) return new error('Invalid route parameter array length');
-                        options.arr_len = parseInt(arrlen, 10);
+                        if (isNaN(arrlen)) throw Error('Invalid route parameter array length')
+                        options.arr_len = parseInt(arrlen, 10)
                     }
                 }
                 
-                definition = definition.substr(0, arrBegin);
+                definition = definition.substr(0, arrBegin)
             }
             
             if (!mutators[definition]) {
-                throw error('Invalid route parameter type ' + definition);
+                throw Error('Invalid route parameter type ' + definition)
             }
         } else {
-            throw error('Invalid route parameter scheme on key ' + current_key);
+            throw Error('Invalid route parameter scheme on key ' + current_key)
         }
         
         if (key[key.length-1] === '_') {
-            key = key.substr(0, key.length-1);
-            options.required = false;
+            key = key.substr(0, key.length-1)
+            options.required = false
         }
         
-        options.type = options.type || definition;
-        scheme[key] = options;
+        options.type = options.type || definition
+        scheme[key] = options
     }
     
-    return scheme;
+    return scheme
 }
 
 /**
@@ -136,99 +132,101 @@ function buildScheme(_scheme, _parent) {
  * TODO NOTE    Errors can be ignored by passing a function to onError that returns undefined always.
  *              This allows for soft failing on invalid params. This function can also be used to log the errors.  
  */
-var Needs = function (options) {
-    options = options || {};
-    this.strict = options.strict === undefined ? true : options.strict;
-    this.onError = function (request, msg, key, value, expected) {
-        if (typeof options.onError === 'function') {
-            return options.onError({
-                request: request,
-                message: msg,
-                parameter: key,
-                value: value,
-                expected: expected
-            });
-        } else {
-            return { message: msg, parameter: key, value: value, expected: expected };
-        }
-    };
-};
-
-Needs.prototype.params = function (_scheme) {
-    var scheme = buildScheme(_scheme);
-    var _this = this;
+class Needs {
     
-    return function (req, res, next) {
-        next(_this.validate(scheme, req.body || req.query, req));
-    };
-};
-
-Needs.prototype.validate = function (scheme, data, req, _parent) {
-    var count = 0; // Counter used to count processed fields and detect any extraneous fields
-    for (var key in scheme) {
-        // For returning correct parameter if errored
-        var _current = _parent ? _parent+'['+key+']' : key;
-        
-        if (data[key] !== undefined) {
-            if (typeof scheme[key].type === 'object') {
-                if (typeof data[key] !== 'object') {
-                    return this.onError(req, 'Invalid parameter type, object expected', _current, data[key], true);
-                }
-                
-                var err = validate(scheme[key].type, data[key], req, _current);
-                if (err) return err;
+    constructor(options) {
+        options = options || {}
+        this.strict = options.strict === undefined ? true : options.strict
+        this.onError = (request, msg, key, value, expected) => {
+            if (typeof options.onError === 'function') {
+                return options.onError({
+                    request: request,
+                    message: msg,
+                    parameter: key,
+                    value: value,
+                    expected: expected
+                })
             } else {
-                var func = scheme[key].type === 'mutator' ? scheme[key].mutator : mutators[scheme[key].type];
-                
-                if (scheme[key].is_arr) {
-                    if (!Array.isArray(data[key])) data[key] = [data[key]];
-                    if (scheme[key].arr_len && data[key].length !== scheme[key].arr_len) {
-                        return this.onError(req, 'Array length must be ' + scheme[key].arr_len, _current, data[key].length, true);
+                return { message: msg, parameter: key, value: value, expected: expected }
+            }
+        }
+    }
+
+    params(_scheme) {
+        let scheme = buildScheme(_scheme)
+        return (req, res, next) => {
+            next(this.validate(scheme, req.body || req.query, req))
+        }
+    }
+
+    validate(scheme, data, req, _parent) {
+        let count = 0 // Counter used to count processed fields and detect any extraneous fields
+        for (let key in scheme) {
+            // For returning correct parameter if errored
+            let _current = _parent ? _parent+'['+key+']' : key
+            
+            if (data[key] !== undefined) {
+                if (typeof scheme[key].type === 'object') {
+                    if (typeof data[key] !== 'object') {
+                        return this.onError(req, 'Invalid parameter type, object expected', _current, data[key], true)
                     }
-                    for (var i = 0; i < data[key].length; ++i) {
-                        var val = func(data[key][i]);
-                        if (val === undefined) {
-                            return this.onError(req, 'Invalid parameter value', _current, data[key], true);
-                        }
-                        data[key][i] = val;
-                    }
+                    
+                    let err = this.validate(scheme[key].type, data[key], req, _current)
+                    if (err) return err
                 } else {
-                    var val = func(data[key]);
-                    if (val === undefined) {
-                        return this.onError(req, 'Invalid parameter value', _current, data[key], true);
+                    let func = scheme[key].type === 'mutator' ? scheme[key].mutator : mutators[scheme[key].type]
+                    
+                    if (scheme[key].is_arr) {
+                        if (!Array.isArray(data[key])) data[key] = [data[key]]
+                        if (scheme[key].arr_len && data[key].length !== scheme[key].arr_len) {
+                            return this.onError(req, 'Array length must be ' + scheme[key].arr_len, _current, data[key].length, true)
+                        }
+                        for (let i = 0; i < data[key].length; ++i) {
+                            let val = func(data[key][i])
+                            if (val === undefined) {
+                                return this.onError(req, 'Invalid parameter value', _current, data[key], true)
+                            }
+                            data[key][i] = val
+                        }
+                    } else {
+                        let val = func(data[key])
+                        if (val === undefined) {
+                            return this.onError(req, 'Invalid parameter value', _current, data[key], true)
+                        }
+                        data[key] = val
                     }
-                    data[key] = val;
                 }
-            }
-            
-            ++count;
-        } else if (scheme[key].required) {
-            if (typeof scheme[key].type === 'object') {
-                var _type = scheme[key].type;
-                while (typeof _type === 'object') {
-                    var _keys = Object.keys(_type);
-                    _current += '['+_keys[0]+']';
-                    _type = _type[_keys[0]].type;
+                
+                ++count
+            } else if (scheme[key].required) {
+                if (typeof scheme[key].type === 'object') {
+                    let _type = scheme[key].type
+                    while (typeof _type === 'object') {
+                        let _keys = Object.keys(_type)
+                        _current += '['+_keys[0]+']'
+                        _type = _type[_keys[0]].type
+                    }
                 }
+                
+                return this.onError(req, 'Missing expected parameter', _current, data[key], true)
             }
-            
-            return this.onError(req, 'Missing expected parameter', _current, data[key], true);
+        }
+        
+        if (this.strict && count !== Object.keys(data).length) {
+            // get the first unexpected parameter and report as unexpected
+            for (let key in data) {
+                if (!scheme[key]) return this.onError(req, 'Unexpected parameter', _parent ? _parent+'['+key+']' : key, data[key], false)
+            }
         }
     }
     
-    if (this.strict && count !== Object.keys(data).length) {
-        // get the first unexpected parameter and report as unexpected
-        for (var key in data) {
-            if (!scheme[key]) return this.onError(req, 'Unexpected parameter', _parent ? _parent+'['+key+']' : key, data[key], false);
-        }
+    // Disallow any parameters from being sent to this endpoint
+    nothing(req, res, next) {
+        let data = req.body || req.query || {}
+        let keys = Object.keys(data)
+        if (keys.length) return next(this.onError(req, 'Unexpected parameter', keys[0], data[keys[0]], false))
+        next()
     }
 }
 
-Needs.prototype.nothing = function (req, res, next) {
-    var data = req.body || req.query || {};
-    var keys = Object.keys(data);
-    if (keys.length) return next(this.onError(req, 'Unexpected parameter', keys[0], data[keys[0]], false));
-    next();
-};
-
-module.exports = function(options) { return new Needs(options); };
+module.exports = options => { return new Needs(options) }

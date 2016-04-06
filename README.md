@@ -115,3 +115,6 @@ app.use(function(err, req, res, next) {
     req.status(400).send(err);
 });
 ```
+
+## License
+[MIT]: https://raw.githubusercontent.com/miketerpak/needs-params/master/LICENSE

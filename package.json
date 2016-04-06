@@ -4,7 +4,7 @@
   "description": "Generates Express middleware that formats and enforces a route parameter scheme",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ava"
   },
   "repository": {
     "type": "git",
@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/miketerpak/needs-params/issues"
   },
-  "homepage": "https://github.com/miketerpak/needs-params#readme"
+  "homepage": "https://github.com/miketerpak/needs-params#readme",
+  "dependencies": {
+      "ava": "^0.13.0"
+  }
 }
