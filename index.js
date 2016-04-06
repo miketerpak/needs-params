@@ -1,5 +1,7 @@
 'use strict';
 
+var bodyParser = require('bodyParser');
+
 /**
  * TODO update to es6
  * 
