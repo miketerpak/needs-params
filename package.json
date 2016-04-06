@@ -1,0 +1,27 @@
+{
+  "name": "needs-params",
+  "version": "1.0.0",
+  "description": "Generates Express middleware that formats and enforces a route parameter scheme",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miketerpak/needs-params.git"
+  },
+  "keywords": [
+    "parameter",
+    "param",
+    "checker",
+    "validator",
+    "express",
+    "needs"
+  ],
+  "author": "terpak",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/miketerpak/needs-params/issues"
+  },
+  "homepage": "https://github.com/miketerpak/needs-params#readme"
+}
