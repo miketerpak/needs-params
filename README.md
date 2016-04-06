@@ -11,11 +11,7 @@ Available through npm:
 ### `options`
 `strict` 	- Returns an error when unexpected parameters are received
 
-`onError`	- Custom error handler. Handler should return the error object
-            to be forwarded to the error handler via `next`. 
-            
-            NOTE: The handler can also return nothing, which does not forward
-            an error to `next`, and thus not failing on invalid data values
+`onError`	- Custom error handler. Handler should return the error object to be forwarded to the error handler via `next`.
 
 #### onError Example
 > ```
@@ -35,6 +31,8 @@ Available through npm:
 > 	    )
 
 >	    // error object to be forwarded to 'next'
+>       // NOTE: The handler can also return nothing or undefined, which does not forward
+>       // an error to `next`, and thus not failing on invalid data values
 >       return Error(options.message)
 >   }
 > }
