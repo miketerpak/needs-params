@@ -22,7 +22,7 @@ Available through npm:
   * options.value - Invalid parameter value
   * options.expected - `true` if the parameter was expected, yet invalid.  `false` if not found on schema
   */
-{
+var needs = require('needs-params')({
     onError: function (options) {
         console.log( // Log error info
             'Parameter-Error',
@@ -35,7 +35,7 @@ Available through npm:
         // an error to `next`, and thus not failing on invalid data values
         return Error(options.message)
     }
-}
+})
 ```
 
 
