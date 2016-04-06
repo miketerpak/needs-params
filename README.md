@@ -6,14 +6,17 @@ Available through npm:
     npm install needs-params
     
 ## Usage
+
+### Initialization
+
     var needs = require('needs-params')(options)
-    
-### `options`
+
+#### `options`
 `strict` 	- Returns an error when unexpected parameters are received, default `true`
 
 `onError`	- Custom error handler. Handler should return the error object to be forwarded to the error handler via `next`, default forwards `{ message, parameter, value, expected }` to `next` 
 
-#### onError Example
+##### onError Example
 ```
 /**
   * options.req - Express request object
@@ -38,23 +41,53 @@ var needs = require('needs-params')({
 })
 ```
 
+### Generate parameter middleware
 
+    var param_middleware = needs.params(scheme)
 
+#### `scheme`
+
+##### scheme example
+```
+{   // Scheme for user registration
+    email: 'str',   // Required string
+    password: utils.hashPassword,   // Custom mutator, returns null on invalid value, else mutated value
+    age_: 'int',    // Optional integer
+    location_: {    // Optional object
+        address_: 'str',        // Optional string
+        coordinates: 'int[2]'   // Int array of size 2, required only if `location` is set
+    },
+    verified: 'bool'    // Required boolean
+}
+```
 
 ### Example
 ```
-var needs = require('ne
-	console.log('Parameter-Error: ', options.message);eds-params')()
+var needs = require('needs-params')()
 var express = require('express')
+var bodyParser = require('body-parser')
 var app = express()
+var utils = require('./utils')
     
 app.use(bodyParser.json({strict: true}))
 app.use(bodyParser.urlencoded({extended: true}))
 
 var register_params = needs.params({
-       
+    email: 'str',
+    password: utils.hashPassword,
+    age_: 'int',
+    location_: {
+        address_: 'str',
+        coordinates: 'int[2]'
+    },
+    verified: 'bool'
 });
-app.post('/user/register', function (req, res) {
+app.post('/user/register', register_params, function (req, res) {
   // register user
 })
+
+// Error handler
+app.use(function(err, req, res, next) {
+    req.status(400).send(err);
+});
 ```

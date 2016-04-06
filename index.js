@@ -4,6 +4,7 @@ var bodyParser = require('bodyParser');
 
 /**
  * TODO update to es6
+ * TODO implement bodyparser
  * 
  * How to use:
  * 
