@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/miketerpak/needs-params#readme",
   "dependencies": {
-      "ava": "^0.13.0"
+      "ava": "^0.13.0",
+      "body-parser": "^1.15.0"
   }
 }

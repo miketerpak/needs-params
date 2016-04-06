@@ -14,6 +14,9 @@
  * []           - parameter is an array
  * [x]          - parameter is an array of fixed length x
  */
+const bodyParser = require("body-parser")
+const parseBody = bodyParser.json({strict: true})
+const parseQuery = bodyParser.urlencoded({extended: true})
 
 let mutators = { // Mutators return undefined when values are invalid
     int: v => {
@@ -155,7 +158,25 @@ class Needs {
     params(_scheme) {
         let scheme = buildScheme(_scheme)
         return (req, res, next) => {
-            next(this.validate(scheme, req.body || req.query, req))
+            // Parse the body, if necessary
+            let checkBody = (_req, _res) => {
+                if (_req.body === undefined) {
+                    parseBody(_req, _res, process)
+                } else {
+                    process(_req, _res)
+                }
+            }
+            // Perform the actual validation
+            let process = (_req, _res) => {
+                next(this.validate(scheme, _req.body || _req.query, _req))
+            }
+            
+            // Parse the body if necessary
+            if (req.query === undefined) {
+                parseQuery(req, res, checkBody)
+            } else {
+                checkBody(req, res)
+            }
         }
     }
 

@@ -1,8 +1,8 @@
 import test from 'ava'
-const _Needs = require('./index.js')
+const Needs = require('./index.js')
 
 test('test success w/o strict', t => {
-    let needs = _Needs({ strict: false })
+    let needs = Needs({ strict: false })
     let test = needs.params({
         a: 'int',
         b_: 'float',
@@ -25,7 +25,8 @@ test('test success w/o strict', t => {
                 },
                 f: 324
             }
-        }
+        },
+        query: {}
     }, null, (err)=>{
         if (err) {
             console.log('testNonstrictCorrect', err)
@@ -37,7 +38,7 @@ test('test success w/o strict', t => {
 })
 
 test('test failure w/o strict', t => {
-    let needs = _Needs({ strict: false })
+    let needs = Needs({ strict: false })
     let test = needs.params({
         a: 'int',
         b_: 'float',
@@ -60,7 +61,8 @@ test('test failure w/o strict', t => {
                 },
                 f: 324
             }
-        }
+        },
+        query: {}
     }, null, (err)=>{
         if (!err || !err.expected) {
             console.log('testStrictIncorrect', err)
@@ -72,7 +74,7 @@ test('test failure w/o strict', t => {
 })
 
 test('test success w/ strict', t => {
-    let needs = _Needs({})
+    let needs = Needs({})
     let test = needs.params({
         a: 'int',
         b_: 'float',
@@ -94,7 +96,8 @@ test('test success w/ strict', t => {
                     g: Date.now()
                 }
             }
-        }
+        },
+        query: {}
     }, null, (err)=>{
         if (err) {
             console.log('testStrictCorrect', err)
@@ -106,7 +109,7 @@ test('test success w/ strict', t => {
 })
 
 test('test failure w/ strict', t => {
-    let needs = _Needs({ onError: options => { return 'Successful Error Test' } })
+    let needs = Needs({ onError: options => { return 'Successful Error Test' } })
     let test = needs.params({
         a: 'int',
         b_: 'float',
@@ -129,7 +132,8 @@ test('test failure w/ strict', t => {
                 },
                 f: 1
             }
-        }
+        },
+        query: {}
     }, null, err =>{
         if (!err || err.expected) {
             console.log('testStrictIncorrect', err)

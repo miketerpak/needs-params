@@ -1,12 +1,16 @@
 # needs-params
 
-NodeJS tool for generating Express middleware that formats and enforces a parameter scheme
+Express parameter formatting and validation
 
 ## Install
 
     npm install needs-params
     
 ## Usage
+
+**needs-params** stores the processed bodies into `req.body` and `req.query` for the body and query string respectively.
+
+It uses `body-parser` for parsing any raw data.
 
 ### Initialization
 
