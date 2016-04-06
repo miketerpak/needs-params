@@ -13,7 +13,8 @@ Available through npm:
 
 `onError`	- Custom error handler. Handler should return the error object
             to be forwarded to the error handler via `next`. 
-            `NOTE:` The handler can also return nothing, which does not forward
+            
+            NOTE: The handler can also return nothing, which does not forward
             an error to `next`, and thus not failing on invalid data values
 
 #### onError Example
