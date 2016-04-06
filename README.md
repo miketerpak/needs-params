@@ -2,8 +2,9 @@
 
 NodeJS tool for generating Express middleware that formats and enforces a parameter scheme
 
-Available through npm:
-    npm install needs-params
+## Install
+
+`npm install needs-params`
     
 ## Usage
 
