@@ -66,15 +66,22 @@ var needs = require('needs-params')({
 var needs = require('needs-params')()
 var express = require('express')
 var bodyParser = require('body-parser')
+var bcrypt = require('bcrypt')
 var app = express()
-var utils = require('./utils')
     
 app.use(bodyParser.json({strict: true}))
 app.use(bodyParser.urlencoded({extended: true}))
 
+// Custom mutator.  MUST take single param, return new value
+function hashPassword(password) {
+    password = String(password)
+    if (password.length < 6) return
+    return bcrypt.hashSync(password, 10)
+}
+
 var register_params = needs.params({
     email: 'str',
-    password: utils.hashPassword,
+    password: hashPassword,
     age_: 'int',
     location_: {
         address_: 'str',
