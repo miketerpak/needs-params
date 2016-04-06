@@ -121,4 +121,4 @@ app.use(function(err, req, res, next) {
 ```
 
 ## License
-[MIT]: https://raw.githubusercontent.com/miketerpak/needs-params/master/LICENSE
+[MIT](https://raw.githubusercontent.com/miketerpak/needs-params/master/LICENSE)
