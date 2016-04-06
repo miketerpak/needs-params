@@ -9,9 +9,9 @@ Available through npm:
     var needs = require('needs-params')(options)
     
 ### `options`
-`strict` 	- Returns an error when unexpected parameters are received
+`strict` 	- Returns an error when unexpected parameters are received, default `true`
 
-`onError`	- Custom error handler. Handler should return the error object to be forwarded to the error handler via `next`.
+`onError`	- Custom error handler. Handler should return the error object to be forwarded to the error handler via `next`, default forwards `{ message, parameter, value, expected }` to `next` 
 
 #### onError Example
 ```
