@@ -10,6 +10,7 @@ Available through npm:
     
 ### `options`
 `strict` 	- Returns an error when unexpected parameters are received
+
 `onError`	- Custom error handler.
 
 > onError Example
