@@ -14,11 +14,13 @@ Available through npm:
 
 > onError Example
 > ```
-> // options.req - Express request object
-> // options.message - Error message
-> // options.parameter - Parameter that caused error
-> // options.value - Invalid parameter value
-> // options.expected - `true` if the parameter was expected, yet invalid.  `false` if not found on schema
+> /**
+>   * options.req - Express request object
+>   * options.message - Error message
+>   * options.parameter - Parameter that caused error
+>   * options.value - Invalid parameter value
+>   * options.expected - `true` if the parameter was expected, yet invalid.  `false` if not found on schema
+>   */
 > {
 >  onError: function (options) {
 >	console.log( // Log error info
