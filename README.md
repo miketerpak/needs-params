@@ -13,7 +13,7 @@ Available through npm:
 
 `onError`	- Custom error handler.
 
-> onError Example
+### onError Example
 > ```
 > /**
 >   * options.req - Express request object
@@ -23,16 +23,16 @@ Available through npm:
 >   * options.expected - `true` if the parameter was expected, yet invalid.  `false` if not found on schema
 >   */
 > {
->  onError: function (options) {
->	console.log( // Log error info
->		'Parameter-Error',
->		'[IP: ' + req.connection.remoteAddress + ']',
-> 		options.message, options.parameter, options.value
-> 	)
->  }
-	
->	// error object to be forwarded to 'next'
-> 	return Error(options.message);
+>   onError: function (options) {
+>       console.log( // Log error info
+>           'Parameter-Error',
+>           '[IP: ' + req.connection.remoteAddress + ']',
+>           options.message, options.parameter, options.value
+> 	    )
+
+>	    // error object to be forwarded to 'next'
+>       return Error(options.message)
+>   }
 > }
 > ```
 
