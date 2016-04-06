@@ -15,28 +15,28 @@ Available through npm:
 
 #### onError Example
 ```
- /**
-   * options.req - Express request object
-   * options.message - Error message
-   * options.parameter - Parameter that caused error
-   * options.value - Invalid parameter value
-   * options.expected - `true` if the parameter was expected, yet invalid.  `false` if not found on schema
-   */
- {
-   onError: function (options) {
-       console.log( // Log error info
-           'Parameter-Error',
-           '[IP: ' + req.connection.remoteAddress + ']',
-           options.message, options.parameter, options.value
- 	    )
+/**
+  * options.req - Express request object
+  * options.message - Error message
+  * options.parameter - Parameter that caused error
+  * options.value - Invalid parameter value
+  * options.expected - `true` if the parameter was expected, yet invalid.  `false` if not found on schema
+  */
+{
+    onError: function (options) {
+        console.log( // Log error info
+            'Parameter-Error',
+            '[IP: ' + req.connection.remoteAddress + ']',
+            options.message, options.parameter, options.value
+        )
 
-	    // error object to be forwarded to `next`
-       // NOTE: The handler can also return nothing or undefined, which does not forward
-       // an error to `next`, and thus not failing on invalid data values
-       return Error(options.message)
-   }
- }
- ```
+        // error object to be forwarded to `next`
+        // NOTE: The handler can also return nothing or undefined, which does not forward
+        // an error to `next`, and thus not failing on invalid data values
+        return Error(options.message)
+    }
+}
+```
 
 
 
