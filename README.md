@@ -4,7 +4,7 @@ NodeJS tool for generating Express middleware that formats and enforces a parame
 
 ## Install
 
-    `npm install needs-params`
+    npm install needs-params
     
 ## Usage
 
