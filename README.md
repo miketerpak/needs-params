@@ -18,7 +18,7 @@ var needs = require('needs-params')(options)
 `onError`	- Custom error handler. Handler should return the error object to be forwarded to the error handler via `next`, default forwards `{ message, parameter, value, expected }` to `next` 
 
 ##### onError Example
-```
+```javascript
 /**
   * options.req - Express request object
   * options.message - Error message
@@ -65,7 +65,7 @@ The following are a list of the valid *type strings*:
 * `date` `time` `datetime`          - JS Date object, accepts millisecond timestamps and formatted datetime strings
 
 ##### scheme example
-```
+```javascript
 {   // Scheme for user registration
     email: 'str',   // Required string
     password: utils.hashPassword,   // Custom mutator, returns null on invalid value, else mutated value
@@ -79,7 +79,7 @@ The following are a list of the valid *type strings*:
 ```
 
 ### Full Example
-```
+```javascript
 var needs = require('needs-params')()
 var express = require('express')
 var bodyParser = require('body-parser')
