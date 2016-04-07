@@ -15,7 +15,7 @@ If the body is already parsed (`req.body` is set), this step is ignored.
 
 ### Initialization
 
-var needs = require('needs-params')(options)
+    var needs = require('needs-params')(options)
 
 #### `options`
 `strict` 	- Returns an error when unexpected parameters are received, default `true`
