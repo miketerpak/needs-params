@@ -15,8 +15,8 @@
  * [x]          - parameter is an array of fixed length x
  */
 const bodyParser = require("body-parser")
-const parseBody = bodyParser.json({strict: true})
-const parseQuery = bodyParser.urlencoded({extended: true})
+const parseUrlencodedBody = bodyParser.urlencoded({extended: true})
+const parseJSONBody = bodyParser.json({strict: true})
 
 let mutators = { // Mutators return undefined when values are invalid
     int: v => {
@@ -117,6 +117,10 @@ function buildScheme(_scheme, _parent) {
     return scheme
 }
 
+function isEmpty(obj) {
+    return Object.keys(obj).length === 0
+}
+
 /**
  * @param options
  * @param options.strict        fail if passed unexpected parameters (default true)
@@ -159,24 +163,29 @@ class Needs {
         let scheme = buildScheme(_scheme)
         return (req, res, next) => {
             // Parse the body, if necessary
-            let checkBody = (_req, _res) => {
-                if (_req.body === undefined) {
-                    parseBody(_req, _res, process)
+            let checkUrlencoded = () => {
+                if (req.body === undefined || isEmpty(req.body)) {
+                    parseUrlencodedBody(req, res, checkJSON)
                 } else {
-                    process(_req, _res)
+                    process()
+                }
+            }
+            let checkJSON = () => {
+                if (req.body === undefined || isEmpty(req.body)) {
+                    parseJSONBody(req, res, process)
+                } else {
+                    process()
                 }
             }
             // Perform the actual validation
-            let process = (_req, _res) => {
-                next(this.validate(scheme, _req.body || _req.query, _req))
+            let process = () => {
+                let data = req.body
+                if (!data || isEmpty(data)) data = req.query || {}
+                next(this.validate(scheme, data, req))
             }
             
-            // Parse the body if necessary
-            if (req.query === undefined) {
-                parseQuery(req, res, checkBody)
-            } else {
-                checkBody(req, res)
-            }
+            checkUrlencoded()
+            // else process()
         }
     }
 
