@@ -18,9 +18,9 @@ If the body is already parsed (`req.body` is set), this step is ignored.
     var needs = require('needs-params')(options)
 
 #### `options`
-`strict` 	- Returns an error when unexpected parameters are received, default `true`
+`options.strict` 	- Returns an error when unexpected parameters are received, default `true`
 
-`onError`	- Custom error handler. Handler should return the error object to be forwarded to the error handler via `next`, default forwards `{ message, parameter, value, expected }` to `next` 
+`options.onError`	- Custom error handler. Handler should return the error object to be forwarded to the error handler via `next`, default forwards `{ message, parameter, value, expected }` to `next` 
 
 ##### onError Example
 ```javascript
