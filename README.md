@@ -10,7 +10,8 @@ Express parameter formatting and validation
 
 **needs-params** stores the processed bodies into `req.body` and `req.query` for the body and query string respectively.
 
-It uses `body-parser` for parsing any raw data.
+If **needs-params** receives a raw body, it is parsed with `body-parser`.  For parsing JSON bodies, `bodyParser.json({strict: true})` is used, while for url encoded form data, `bodyParser.urlencoded({extended: true})` is used.
+If the body is already parsed (`req.body` is set), this step is ignored.
 
 ### Initialization
 

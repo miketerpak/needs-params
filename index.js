@@ -184,8 +184,8 @@ class Needs {
                 next(this.validate(scheme, data, req))
             }
             
-            checkUrlencoded()
-            // else process()
+            if (isEmpty(req.query)) checkUrlencoded()
+            else process()
         }
     }
 
