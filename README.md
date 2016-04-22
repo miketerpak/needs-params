@@ -83,6 +83,15 @@ The following are a list of the valid *type strings*:
 }
 ```
 
+### Predefined middleware: `needs.no`
+
+These preset middlewares are used to require that no values be sent 
+
+`needs.no.params` - Don't accept any parameters through the body or query string
+
+`needs.no.headers` - Don't accept any headers
+
+
 ### Full Example
 ```javascript
 var needs = require('needs-params')()
@@ -113,6 +122,10 @@ var register_params = needs.params({
 });
 app.post('/user/register', register_params, function (req, res) {
   // register user
+})
+
+app.post('/user/me', needs.no.params, function (req, res) {
+  // return self
 })
 
 // Error handler

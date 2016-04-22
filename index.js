@@ -142,7 +142,6 @@ function isEmpty(obj) {
 class Needs {
     
     constructor(options) {
-        options = options || {}
         this.strict = options.strict === undefined ? true : options.strict
         this.onError = (request, msg, key, value, expected) => {
             if (typeof options.onError === 'function') {
@@ -155,6 +154,21 @@ class Needs {
                 })
             } else {
                 return { message: msg, parameter: key, value: value, expected: expected }
+            }
+        }
+        
+        this.no = {
+            headers: (req, res, next) => {
+                if (!req.headers) return next()
+                let keys = Object.keys(req.headers)
+                if (keys.length) return next(this.onError(req, 'Unexpected header', keys[0], req.headers[keys[0]], false))
+                next(true)
+            },
+            params: (req, res, next) => {
+                let data = req.body || req.query || {}
+                let keys = Object.keys(data)
+                if (keys.length) return next(this.onError(req, 'Unexpected parameter', keys[0], data[keys[0]], false))
+                next(true)
             }
         }
     }
@@ -248,14 +262,6 @@ class Needs {
                 if (!scheme[key]) return this.onError(req, 'Unexpected parameter', _parent ? _parent+'['+key+']' : key, data[key], false)
             }
         }
-    }
-    
-    // Disallow any parameters from being sent to this endpoint
-    nothing(req, res, next) {
-        let data = req.body || req.query || {}
-        let keys = Object.keys(data)
-        if (keys.length) return next(this.onError(req, 'Unexpected parameter', keys[0], data[keys[0]], false))
-        next()
     }
 }
 
