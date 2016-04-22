@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * TODO implement bodyparser
+ * TODO test new onError setup
  * 
  * How to use:
  * 
@@ -136,24 +136,26 @@ function isEmpty(obj) {
  * @param options.expected  boolean flag for if this parameter is not a part of the schema 
  * @returns                 An error object to be forwarded via "next"
  * 
- * TODO NOTE    Errors can be ignored by passing a function to onError that returns undefined always.
+ * NOTE         Errors can be ignored by passing a function to onError that returns undefined always.
  *              This allows for soft failing on invalid params. This function can also be used to log the errors.  
  */
 class Needs {
     
     constructor(options) {
         this.strict = options.strict === undefined ? true : options.strict
-        this.onError = (request, msg, key, value, expected) => {
+        this.onError = (err) => { //req, msg, key, value, expected
+            let errObj = {}
+            
+            if (err.req) errObj.request = err.req
+            if (err.msg) errObj.message = err.msg
+            if (err.param) errObj.param = err.param
+            if (err.value) errObj.value = err.value
+            if (err.expected !== undefined) errObj.expected = err.expected
+            
             if (typeof options.onError === 'function') {
-                return options.onError({
-                    request: request,
-                    message: msg,
-                    parameter: key,
-                    value: value,
-                    expected: expected
-                })
+                return options.onError(errObj)
             } else {
-                return { message: msg, parameter: key, value: value, expected: expected }
+                return errObj
             }
         }
         
@@ -161,13 +163,13 @@ class Needs {
             headers: (req, res, next) => {
                 if (!req.headers) return next()
                 let keys = Object.keys(req.headers)
-                if (keys.length) return next(this.onError(req, 'Unexpected header', keys[0], req.headers[keys[0]], false))
+                if (keys.length) return next(this.onError({ req: req, msg: 'Unexpected header', param: keys[0], value: req.headers[keys[0]], expected: false }))
                 next()
             },
             params: (req, res, next) => {
                 let data = req.body || req.query || {}
                 let keys = Object.keys(data)
-                if (keys.length) return next(this.onError(req, 'Unexpected parameter', keys[0], data[keys[0]], false))
+                if (keys.length) return next(this.onError({ req: req, msg: 'Unexpected parameter', param: keys[0], value: data[keys[0]], expected: false }))
                 next()
             }
         }
@@ -202,7 +204,23 @@ class Needs {
             else process()
         }
     }
-
+    
+    headers(_scheme) {
+        let scheme = buildScheme(_scheme)
+        return (req, res, next) => {
+            next(this.validate(scheme, req.headers || {}, req))
+        }
+    }
+    
+    // TODO clone the object first?
+    format(_scheme) {
+        let scheme = buildScheme(_scheme)
+        return (obj, cb) => {
+            if (typeof cb !== 'function') throw new Error('Missing callback')
+            cb(this.validate(scheme, obj))
+        }
+    }
+    
     validate(scheme, data, req, _parent) {
         let count = 0 // Counter used to count processed fields and detect any extraneous fields
         for (let key in scheme) {
@@ -212,7 +230,7 @@ class Needs {
             if (data[key] !== undefined) {
                 if (typeof scheme[key].type === 'object') {
                     if (typeof data[key] !== 'object') {
-                        return this.onError(req, 'Invalid parameter type, object expected', _current, data[key], true)
+                        return this.onError({ req: req, msg: 'Invalid parameter type, object expected', param: _current, value: data[key], expected: true })
                     }
                     
                     let err = this.validate(scheme[key].type, data[key], req, _current)
@@ -223,19 +241,19 @@ class Needs {
                     if (scheme[key].is_arr) {
                         if (!Array.isArray(data[key])) data[key] = [data[key]]
                         if (scheme[key].arr_len && data[key].length !== scheme[key].arr_len) {
-                            return this.onError(req, 'Array length must be ' + scheme[key].arr_len, _current, data[key].length, true)
+                            return this.onError({ req: req, msg: 'Array length must be ' + scheme[key].arr_len, param: _current, value: data[key].length, expected: true })
                         }
-                        for (let i = 0; i < data[key].length; ++i) {
+                        for (let i = data[key].length - 1; i >= 0; --i) {
                             let val = func(data[key][i])
                             if (val === undefined) {
-                                return this.onError(req, 'Invalid parameter value', _current, data[key], true)
+                                return this.onError({ req: req, msg: 'Invalid parameter value', param: _current, value: data[key], expected: true })
                             }
                             data[key][i] = val
                         }
                     } else {
                         let val = func(data[key])
                         if (val === undefined) {
-                            return this.onError(req, 'Invalid parameter value', _current, data[key], true)
+                            return this.onError({ req: req, msg: 'Invalid parameter value', param: _current, value: data[key], expected: true })
                         }
                         data[key] = val
                     }
@@ -252,14 +270,14 @@ class Needs {
                     }
                 }
                 
-                return this.onError(req, 'Missing expected parameter', _current, data[key], true)
+                return this.onError({ req: req, msg: 'Missing expected parameter', param: _current, value: data[key], expected: true })
             }
         }
         
         if (this.strict && count !== Object.keys(data).length) {
             // get the first unexpected parameter and report as unexpected
             for (let key in data) {
-                if (!scheme[key]) return this.onError(req, 'Unexpected parameter', _parent ? _parent+'['+key+']' : key, data[key], false)
+                if (!scheme[key]) return this.onError({ req: req, msg: 'Unexpected parameter', param: (_parent ? _parent+'['+key+']' : key), value: data[key], expected: false })
             }
         }
     }
