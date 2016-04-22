@@ -162,13 +162,13 @@ class Needs {
                 if (!req.headers) return next()
                 let keys = Object.keys(req.headers)
                 if (keys.length) return next(this.onError(req, 'Unexpected header', keys[0], req.headers[keys[0]], false))
-                next(true)
+                next()
             },
             params: (req, res, next) => {
                 let data = req.body || req.query || {}
                 let keys = Object.keys(data)
                 if (keys.length) return next(this.onError(req, 'Unexpected parameter', keys[0], data[keys[0]], false))
-                next(true)
+                next()
             }
         }
     }
