@@ -118,7 +118,30 @@ function buildScheme(_scheme, _parent) {
 }
 
 function isEmpty(obj) {
+    if (!obj) return true
     return Object.keys(obj).length === 0
+}
+
+function cloneObject(obj) {
+    let _obj = {}
+    
+    for (let key in obj) {
+        switch (typeof obj[key]) {
+            case 'function':
+                _obj[key] = obj[key].bind()
+                break
+            case 'object':
+                if (Array.isArray(obj[key])) {
+                    _obj[key] = Array(...obj[key])
+                } else {
+                    _obj[key] = cloneObject(obj[key])
+                }
+            default:
+                _obj[key] = obj[key]
+        }
+    }
+    
+    return _obj
 }
 
 /**
@@ -142,6 +165,7 @@ function isEmpty(obj) {
 class Needs {
     
     constructor(options) {
+        options = options || {}
         this.strict = options.strict === undefined ? true : options.strict
         this.onError = (err) => { //req, msg, key, value, expected
             let errObj = {}
@@ -180,14 +204,14 @@ class Needs {
         return (req, res, next) => {
             // Parse the body, if necessary
             let checkUrlencoded = () => {
-                if (req.body === undefined || isEmpty(req.body)) {
+                if (req.body == null || isEmpty(req.body)) {
                     parseUrlencodedBody(req, res, checkJSON)
                 } else {
                     process()
                 }
             }
             let checkJSON = () => {
-                if (req.body === undefined || isEmpty(req.body)) {
+                if (req.body == null || isEmpty(req.body)) {
                     parseJSONBody(req, res, process)
                 } else {
                     process()
@@ -212,12 +236,20 @@ class Needs {
         }
     }
     
-    // TODO clone the object first?
+    spat(_scheme) {
+        let scheme = buildScheme(_scheme)
+        return (req, res, next) => {
+            next(this.validate(scheme, req.params || {}, req))
+        }
+    }
+    
+    // TODO Should this clone+return or mutate?
     format(_scheme) {
         let scheme = buildScheme(_scheme)
         return (obj, cb) => {
             if (typeof cb !== 'function') throw new Error('Missing callback')
-            cb(this.validate(scheme, obj))
+            let _obj = cloneObject(obj)
+            cb(this.validate(scheme, _obj), _obj)
         }
     }
     

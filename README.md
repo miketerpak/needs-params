@@ -6,16 +6,19 @@ Express parameter formatting and validation
 
     npm install needs-params
     
+### Initialization
+
+    var needs = require('needs-params')(options)
+    
 ## Usage
 
-**needs-params** stores the processed bodies into `req.body` and `req.query` for the body and query string respectively.
+**needs-params** stores the processed bodies into `req.body` and `req.query` for the body and query string respectively, via the function `needs.params(...)`.
 
 If **needs-params** receives a raw body, it is parsed with `body-parser`.  For parsing JSON bodies, `bodyParser.json({strict: true})` is used, while for url encoded form data, `bodyParser.urlencoded({extended: true})` is used.
 If the body is already parsed (`req.body` is set), this step is ignored.
 
-### Initialization
+spat values (i.e. `/user/:id`) and header values can be formatted in the same way, using `needs.spat(...)` and `needs.headers(...)` respectively.
 
-    var needs = require('needs-params')(options)
 
 #### `options`
 `options.strict` 	- Returns an error when unexpected parameters are received, default `true`
