@@ -1,10 +1,10 @@
 {
   "name": "needs-params",
-  "version": "1.0.3",
-  "description": "Generates Express middleware that formats and enforces a route parameter scheme",
+  "version": "1.1.0",
+  "description": "Generates Express middleware that formats and enforces a parameter scheme",
   "main": "index.js",
   "scripts": {
-    "test": "ava"
+    "test": "node test.js"
   },
   "repository": {
     "type": "git",
@@ -25,7 +25,6 @@
   },
   "homepage": "https://github.com/miketerpak/needs-params#readme",
   "dependencies": {
-      "ava": "^0.13.0",
       "body-parser": "^1.15.0"
   }
 }

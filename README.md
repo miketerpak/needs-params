@@ -62,9 +62,6 @@ Scheme values are strings which define the data type expected for a parameter, u
 and format the value. Appending `[]` to the *type string* creates an array value, and placing a number within the
 brackets requires all submitted arrays to be of the given size (i.e. `coordinates: 'float[2]')
 
-Scheme values can also be a custom mutator function, which must take a single parameter (the parameter being passed in) and 
-must return undefined if the value is unvalid, or the mutated value. 
-
 The following are a list of the valid *type strings*:
 * `int` `integer`                   - Whole number (takes floor if not whole)
 * `bool` `boolean`                  - Boolean, acceptable values include `t`, `true`, `1` and `f`, `false`, `0`, `-1`
@@ -72,11 +69,16 @@ The following are a list of the valid *type strings*:
 * `float` `num` `numeric` `number`  - Floating point number
 * `date` `time` `datetime`          - JS Date object, accepts millisecond timestamps and formatted datetime strings
 
+A scheme value can also be one of the two following special values:
+* **a function**                    - Custom mutator which takes 1 argument--the param value--and must return the new mutated value, or `undefined` to trigger an error  
+* **an array**                      - You can also provide an array of values. Only the contents of the array will be considered valid values
+
 ##### scheme example
 ```javascript
 {   // Scheme for user registration
     email: 'str',   // Required string
     password: utils.hashPassword,   // Custom mutator, returns null on invalid value, else mutated value
+    country: [ 'us', 'ca' ], // Set of permitted countries
     age_: 'int',    // Optional integer
     location_: {    // Optional object
         address_: 'str',        // Optional string
@@ -116,6 +118,7 @@ function hashPassword(password) {
 var register_params = needs.params({
     email: 'str',
     password: hashPassword,
+    country: [ 'us', 'ca' ],
     age_: 'int',
     location_: {
         address_: 'str',

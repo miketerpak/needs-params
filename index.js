@@ -2,6 +2,8 @@
 
 /**
  * TODO test new onError setup
+ *  Ability to provide array meaning value can only be one in the set 
+ *  
  * 
  * How to use:
  * 
@@ -54,6 +56,8 @@ let mutators = { // Mutators return undefined when values are invalid
             return result
         } else if (typeof v === 'number' && v >= 0) {
             return new Date(v)
+        } else if (v && v.constructor.name === 'Date') {
+            return v
         } else {
             return undefined
         }
@@ -80,6 +84,9 @@ function buildScheme(_scheme, _parent) {
             // NOTE Custom mutators must return UNDEFINED on invalid value
             options.type = 'mutator'
             options.mutator = definition
+        } else if (Array.isArray(definition)) {
+            options.type = 'set'
+            options.mutator = v => { return definition.indexOf(v) >= 0 ? v : undefined } // TODO move into mutators.set?
         } else if (typeof definition === 'object') {
             options.type = buildScheme(definition, current_key)
         } else if (typeof definition === 'string') {
@@ -268,7 +275,7 @@ class Needs {
                     let err = this.validate(scheme[key].type, data[key], req, _current)
                     if (err) return err
                 } else {
-                    let func = scheme[key].type === 'mutator' ? scheme[key].mutator : mutators[scheme[key].type]
+                    let func = scheme[key].type === 'mutator' || scheme[key].type === 'set' ? scheme[key].mutator : mutators[scheme[key].type]
                     
                     if (scheme[key].is_arr) {
                         if (!Array.isArray(data[key])) data[key] = [data[key]]
