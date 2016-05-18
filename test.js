@@ -82,7 +82,7 @@ test('Testing needs.format on plain object...', t => {
         })
     })
     test('Testing unsuccessful format...', t => {
-        format(dataFail, (err, result) => {console.log(err)
+        format(dataFail, (err, result) => {
             if (err) t.pass()
             else t.fail(new Error('Test was unexpectedly successful'))
         })
