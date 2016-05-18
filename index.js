@@ -52,7 +52,7 @@ let mutators = { // Mutators return undefined when values are invalid
     },
     datetime: v => {
         if (typeof v === 'string') {
-            let result = Date.parse(v)
+            let result = new Date(Date.parse(v))
             if (isNaN(result)) return
             return result
         } else if (typeof v === 'number' && v >= 0) {
