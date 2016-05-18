@@ -104,8 +104,10 @@ applied in the original is not overwritten by any subsequent inclusions.
 ``` javascript
 { // pagination_scheme
     limit: 'int',
-    last_: 'int',
-    
+    last_: 'int'
+}
+
+{ // object_scheme
     objectParam: {
         field1: 'date',
         field3_: 'bool'
@@ -123,7 +125,7 @@ applied in the original is not overwritten by any subsequent inclusions.
     }
 }
 
-{ // search_scheme.including(pagination_scheme)
+{ // search_scheme.including(pagination_scheme).including(object_scheme)
     query: 'str',
     sortBy: 'str',
     last_: 'str',
