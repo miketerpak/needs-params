@@ -88,6 +88,55 @@ A scheme value can also be one of the two following special values:
 }
 ```
 
+### Combining middleware
+
+```javascript
+let pagination_middleware = needs.params(...)
+...
+let param_middleware = needs.params(...).including(pagination_middleware)
+```
+
+You can merge the schemes of two middlewares together.  This is different from simply applying one middleware after
+the other in that any included middlewares are recursively merged into the original middleware so that any scheme
+applied in the original is not overwritten by any subsequent inclusions.
+
+#### For example...
+``` javascript
+{ // pagination_scheme
+    limit: 'int',
+    last_: 'int',
+    
+    objectParam: {
+        field1: 'date',
+        field3_: 'bool'
+    }
+}
+
+{ // search_scheme
+    query: 'str',
+    sortBy: 'str',
+    last_: 'str',
+    
+    objectParam: {
+        field1_: 'date',
+        field2: 'float'
+    }
+}
+
+{ // search_scheme.including(pagination_scheme)
+    query: 'str',
+    sortBy: 'str',
+    last_: 'str',
+    limit: 'int',
+    
+    objectParam: {
+        field1_: 'date',
+        field2: 'float',
+        field3_: 'bool'
+    }
+}
+```
+
 ### Predefined middleware: `needs.no`
 
 These preset middlewares are used to require that no values be sent 

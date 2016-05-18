@@ -72,130 +72,144 @@ function test(msg, t) {
     })
 }
 
-test('Testing needs.format on plain object...', t => {
-    let format = needs.format(testScheme)
+// test('Testing needs.format on plain object...', t => {
+//     let format = needs.format(testScheme)
     
-    test('Testing successful format...', t => {
-        format(dataPass, (err, result) => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
-            else t.pass()
-        })
-    })
-    test('Testing unsuccessful format...', t => {
-        format(dataFail, (err, result) => {console.log(err)
-            if (err) t.pass()
-            else t.fail(new Error('Test was unexpectedly successful'))
-        })
-    })
-})
-console.log('')
-test('Testing needs.headers...', t => {
-    let check = needs.headers(testScheme)
+//     test('Testing successful format...', t => {
+//         format(dataPass, (err, result) => {
+//             if (err) t.fail(new Error(JSON.stringify(err)))
+//             else t.pass()
+//         })
+//     })
+//     test('Testing unsuccessful format...', t => {
+//         format(dataFail, (err, result) => {console.log(err)
+//             if (err) t.pass()
+//             else t.fail(new Error('Test was unexpectedly successful'))
+//         })
+//     })
+// })
+// console.log('')
+// test('Testing needs.headers...', t => {
+//     let check = needs.headers(testScheme)
         
-    test('Testing for success...', t => {
-        check({ headers: dataPass }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
-            else t.pass()
-        })
-    })
-    test('Testing for failure...', t => {
-        check({ headers: dataFail }, null, err => {
-            if (err) t.pass()
-            else t.fail(new Error('Test was unexpectedly successful'))
-        })
-    })
-})
-console.log('')
-test('Testing needs.params...', t => {
-    let middleware = needs.params(testScheme)
+//     test('Testing for success...', t => {
+//         check({ headers: dataPass }, null, err => {
+//             if (err) t.fail(new Error(JSON.stringify(err)))
+//             else t.pass()
+//         })
+//     })
+//     test('Testing for failure...', t => {
+//         check({ headers: dataFail }, null, err => {
+//             if (err) t.pass()
+//             else t.fail(new Error('Test was unexpectedly successful'))
+//         })
+//     })
+// })
+// console.log('')
+// test('Testing needs.params...', t => {
+//     let middleware = needs.params(testScheme)
     
-    test('Testing for success on POST...', t => {
-        middleware({ body: dataPass }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
-            else t.pass()
-        })
-    })
-    test('Testing for success on GET...', t => {
-        middleware({ query: dataPass }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
-            else t.pass()
-        })
-    })
+//     test('Testing for success on POST...', t => {
+//         middleware({ body: dataPass }, null, err => {
+//             if (err) t.fail(new Error(JSON.stringify(err)))
+//             else t.pass()
+//         })
+//     })
+//     test('Testing for success on GET...', t => {
+//         middleware({ query: dataPass }, null, err => {
+//             if (err) t.fail(new Error(JSON.stringify(err)))
+//             else t.pass()
+//         })
+//     })
     
-    test('Testing for failure on POST...', t => {
-        middleware({ body: dataFail }, null, err => {
-            if (err) t.pass()
-            else t.fail(new Error('Test was unexpectedly successful'))
-        })
-    })
-    test('Testing for failure on GET...', t => {
-        middleware({ query: dataFail }, null, err => {
-            if (err) t.pass()
-            else t.fail(new Error('Test was unexpectedly successful'))
-        })
-    })
-})
-console.log('')
-test('Testing needs.no.params...', t => {
-    let middleware = needs.no.params
+//     test('Testing for failure on POST...', t => {
+//         middleware({ body: dataFail }, null, err => {
+//             if (err) t.pass()
+//             else t.fail(new Error('Test was unexpectedly successful'))
+//         })
+//     })
+//     test('Testing for failure on GET...', t => {
+//         middleware({ query: dataFail }, null, err => {
+//             if (err) t.pass()
+//             else t.fail(new Error('Test was unexpectedly successful'))
+//         })
+//     })
+// })
+// console.log('')
+// test('Testing needs.no.params...', t => {
+//     let middleware = needs.no.params
     
-    test('Testing for success on POST...', t => {
-        middleware({ body: {} }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
-            else t.pass()
-        })
-    })
-    test('Testing for success on GET...', t => {
-        middleware({ query: {} }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
-            else t.pass()
-        })
-    })
+//     test('Testing for success on POST...', t => {
+//         middleware({ body: {} }, null, err => {
+//             if (err) t.fail(new Error(JSON.stringify(err)))
+//             else t.pass()
+//         })
+//     })
+//     test('Testing for success on GET...', t => {
+//         middleware({ query: {} }, null, err => {
+//             if (err) t.fail(new Error(JSON.stringify(err)))
+//             else t.pass()
+//         })
+//     })
     
-    test('Testing for failure on POST...', t => {
-        middleware({ body: dataFail }, null, err => {
-            if (err) t.pass()
-            else t.fail(new Error('Test was unexpectedly successful'))
-        })
-    })
-    test('Testing for failure on GET...', t => {
-        middleware({ query: dataFail }, null, err => {
-            if (err) t.pass()
-            else t.fail(new Error('Test was unexpectedly successful'))
-        })
-    })
-})
-console.log('')
-test('Testing needs.no.headers', t => {
-    let check = needs.no.headers
+//     test('Testing for failure on POST...', t => {
+//         middleware({ body: dataFail }, null, err => {
+//             if (err) t.pass()
+//             else t.fail(new Error('Test was unexpectedly successful'))
+//         })
+//     })
+//     test('Testing for failure on GET...', t => {
+//         middleware({ query: dataFail }, null, err => {
+//             if (err) t.pass()
+//             else t.fail(new Error('Test was unexpectedly successful'))
+//         })
+//     })
+// })
+// console.log('')
+// test('Testing needs.no.headers', t => {
+//     let check = needs.no.headers
         
-    test('Testing for success...', t => {
-        check({ headers: {} }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
-            else t.pass()
-        })
-    })
-    test('Testing for failure...', t => {
-        check({ headers: dataFail }, null, err => {
-            if (err) t.pass()
-            else t.fail(new Error('Test was unexpectedly successful'))
-        })
-    })
-})
+//     test('Testing for success...', t => {
+//         check({ headers: {} }, null, err => {
+//             if (err) t.fail(new Error(JSON.stringify(err)))
+//             else t.pass()
+//         })
+//     })
+//     test('Testing for failure...', t => {
+//         check({ headers: dataFail }, null, err => {
+//             if (err) t.pass()
+//             else t.fail(new Error('Test was unexpectedly successful'))
+//         })
+//     })
+// })
+// console.log('')
+// test('Testing strict mode', t => {
+//     let middleware = needs_strict.params(testScheme)
+    
+//     test('Testing for success on GET...', t => {
+//         middleware({ query: dataPass }, null, err => {
+//             if (err) t.fail(new Error(JSON.stringify(err)))
+//             else t.pass()
+//         })
+//     })
+    
+//     dataPass.unexpected_parameter = 'Nobody expects the Spanish inquisition!'
+//     test('Testing for failure on GET...', t => {
+//         middleware({ query: dataFail }, null, err => {
+//             if (err) t.pass()
+//             else t.fail(new Error('Test was unexpectedly successful'))
+//         })
+//     })
+// })
 console.log('')
-test('Testing strict mode', t => {
-    let middleware = needs_strict.params(testScheme)
-    
-    test('Testing for success on GET...', t => {
-        middleware({ query: dataPass }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
-            else t.pass()
-        })
+test('Testing including', t => {
+    let other_middleware = needs.params({
+        required_parameter: 'int'
     })
+    let middleware = needs.params(testScheme).including(other_middleware)
     
-    dataPass.unexpected_parameter = 'Nobody expects the Spanish inquisition!'
     test('Testing for failure on GET...', t => {
-        middleware({ query: dataFail }, null, err => {
+        middleware({ query: dataPass }, null, err => {
             if (err) t.pass()
             else t.fail(new Error('Test was unexpectedly successful'))
         })

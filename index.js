@@ -2,6 +2,7 @@
 
 /**
  * TODO test new onError setup
+ *  Object literal for mappable values
  *  Ability to provide array meaning value can only be one in the set 
  *  
  * 
@@ -123,6 +124,16 @@ function buildScheme(_scheme, _parent) {
     
     return scheme
 }
+function mergeSchemes(parent, child) {
+    for (let key in child) {
+        if (parent[key] === undefined) {
+            parent[key] = child[key]
+        } else if (typeof parent[key].type === 'object') {
+            parent[key].type = mergeSchemes(parent[key], child[key])
+        }
+    }
+    return parent
+}
 
 function isEmpty(obj) {
     if (!obj) return true
@@ -151,6 +162,16 @@ function cloneObject(obj) {
     return _obj
 }
 
+function attachMetadata(scheme, middleware) {
+    middleware.scheme = scheme
+    middleware.including = other => {
+        if (!other.scheme) throw new Error('Object passed to .includes was not a needs middleware')
+        middleware.scheme = mergeSchemes(middleware.scheme, other.scheme)
+        return middleware
+    }
+    return middleware
+}
+
 /**
  * @param options
  * @param options.strict        fail if passed unexpected parameters (default true)
@@ -170,7 +191,6 @@ function cloneObject(obj) {
  *              This allows for soft failing on invalid params. This function can also be used to log the errors.  
  */
 class Needs {
-    
     constructor(options) {
         options = options || {}
         this.strict = options.strict === undefined ? true : options.strict
@@ -205,10 +225,28 @@ class Needs {
             }
         }
     }
+    
+    // TODO Should this clone+return or mutate?
+    format(_scheme) {
+        let scheme = buildScheme(_scheme)
+        // NOTE doesn't actually generate middleware, only attaches necessary properties
+        return attachMetadata(scheme, (obj, cb) => {
+            if (typeof cb !== 'function') throw new Error('Missing callback')
+            let _obj = cloneObject(obj)
+            cb(this.validate(scheme, _obj), _obj)
+        })
+    }
+    
+    headers(_scheme) {
+        let scheme = buildScheme(_scheme)
+        return attachMetadata(scheme, (req, res, next) => {
+            next(this.validate(scheme, req.headers || {}, req))
+        })
+    }
 
     params(_scheme) {
         let scheme = buildScheme(_scheme)
-        return (req, res, next) => {
+        return attachMetadata(scheme, (req, res, next) => {
             // Parse the body, if necessary
             let checkUrlencoded = () => {
                 if (req.body == null || isEmpty(req.body)) {
@@ -233,31 +271,14 @@ class Needs {
             
             if (isEmpty(req.query)) checkUrlencoded()
             else process()
-        }
-    }
-    
-    headers(_scheme) {
-        let scheme = buildScheme(_scheme)
-        return (req, res, next) => {
-            next(this.validate(scheme, req.headers || {}, req))
-        }
+        })
     }
     
     spat(_scheme) {
         let scheme = buildScheme(_scheme)
-        return (req, res, next) => {
+        return attachMetadata(scheme, (req, res, next) => {
             next(this.validate(scheme, req.params || {}, req))
-        }
-    }
-    
-    // TODO Should this clone+return or mutate?
-    format(_scheme) {
-        let scheme = buildScheme(_scheme)
-        return (obj, cb) => {
-            if (typeof cb !== 'function') throw new Error('Missing callback')
-            let _obj = cloneObject(obj)
-            cb(this.validate(scheme, _obj), _obj)
-        }
+        })
     }
     
     validate(scheme, data, req, _parent) {
