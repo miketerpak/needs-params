@@ -206,12 +206,50 @@ test('Testing including', t => {
     let other_middleware = needs.params({
         required_parameter: 'int'
     })
-    let middleware = needs.params(testScheme).including(other_middleware)
+    let another_middleware = needs.params({
+        b: {
+            g_: {
+                h: 'str',
+                z: 'int'
+            },
+            i: {
+                x: 'bool',
+                y_: 'bool'
+            }
+        }
+    })
+    let middleware = needs.params({
+        a: 'int',
+        b: {
+            c_: 'str',
+            d: 'bool',
+            e_: {
+                f: 'int[5]'
+            },
+            g: {
+                h: 'int[2]'
+            } 
+        }
+    }).including(other_middleware).including(another_middleware)
+    let data = {
+        a: 2,
+        b: {
+            d: false,
+            // g: {
+            //     h: [1, 2],
+            //     z: 0
+            // },
+            i: {
+                x: true
+            }
+        },
+        required_parameter: 5
+    }
     
-    test('Testing for failure on GET...', t => {
-        middleware({ query: dataPass }, null, err => {
-            if (err) t.pass()
-            else t.fail(new Error('Test was unexpectedly successful'))
+    test('Testing chained inclusions...', t => {
+        middleware({ query: data }, null, err => {
+            if (err) t.fail(new Error(JSON.stringify(err)))
+            else t.pass()
         })
     })
 })

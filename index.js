@@ -126,10 +126,10 @@ function buildScheme(_scheme, _parent) {
 }
 function mergeSchemes(parent, child) {
     for (let key in child) {
-        if (parent[key] === undefined) {
+        if (parent[key] == null) {
             parent[key] = child[key]
-        } else if (typeof parent[key].type === 'object') {
-            parent[key].type = mergeSchemes(parent[key], child[key])
+        } else if (typeof parent[key].type === 'object' && typeof child[key].type === 'object') {
+            parent[key].type = mergeSchemes(parent[key].type, child[key].type)
         }
     }
     return parent
@@ -321,14 +321,14 @@ class Needs {
                 
                 ++count
             } else if (scheme[key].required) {
-                if (typeof scheme[key].type === 'object') {
-                    let _type = scheme[key].type
-                    while (typeof _type === 'object') {
-                        let _keys = Object.keys(_type)
-                        _current += '['+_keys[0]+']'
-                        _type = _type[_keys[0]].type
-                    }
-                }
+                // if (typeof scheme[key].type === 'object') {
+                //     let _type = scheme[key].type
+                //     while (typeof _type === 'object') {
+                //         let _keys = Object.keys(_type)
+                //         _current += '['+_keys[0]+']'
+                //         _type = _type[_keys[0]].type
+                //     }
+                // }
                 
                 return this.onError({ req: req, msg: 'Missing expected parameter', param: _current, value: data[key], expected: true })
             }
