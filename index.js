@@ -86,8 +86,19 @@ function buildScheme(_scheme, _parent) {
             options.type = 'mutator'
             options.mutator = definition
         } else if (Array.isArray(definition)) {
-            options.type = 'set'
-            options.mutator = v => { return definition.indexOf(v) >= 0 ? v : undefined } // TODO move into mutators.set?
+            if (definition.length === 1 && Array.isArray(definition[0])) {
+                let _defs = definition[0]
+                options.type = 'or'
+                options.subschemes = []
+                for (let _def of _defs) {
+                    let __scheme = {}
+                    __scheme[key] = _def
+                    options.subschemes.push(buildScheme(__scheme, _parent))
+                }
+            } else {
+                options.type = 'set'
+                options.mutator = v => definition.indexOf(v) >= 0 ? v : undefined
+            }
         } else if (typeof definition === 'object') {
             options.type = buildScheme(definition, current_key)
         } else if (typeof definition === 'string') {
@@ -295,6 +306,15 @@ class Needs {
                     
                     let err = this.validate(scheme[key].type, data[key], req, _current)
                     if (err) return err
+                } else if (scheme[key].type === 'or') {
+                    let err
+                    for (let _scheme of scheme[key].subschemes) {
+                        if (!(err = this.validate(_scheme, data, req, _parent))) {
+                            err = null
+                            break
+                        }
+                    }
+                    if (err) return this.onError({ req: req, msg: 'Invalid parameter value', param: _current, value: data[key], expected: true })
                 } else {
                     let func = scheme[key].type === 'mutator' || scheme[key].type === 'set' ? scheme[key].mutator : mutators[scheme[key].type]
                     

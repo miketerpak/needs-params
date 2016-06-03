@@ -253,3 +253,43 @@ test('Testing including', t => {
         })
     })
 })
+console.log('')
+test('Testing multiple schemes per key (OR)', t => {
+    let scheme = needs.params({
+        a: 'int',
+        b_: 'str[]',
+        c: [['float', 'bool']],
+        d: 'int[]',
+        e: [1, 5, 9, 'test'],
+        f: [['str', {
+            a: 'int',
+            b_: 'float'
+        }]]
+    })
+    let d = {
+        body: {
+            a: 1,
+            c: 'false',
+            d: [1,2,3],
+            e: 5,
+            f: {
+                a: 3
+            }
+        }
+    }
+    [1, 2, 3]
+    [['str', 'int', 'float']]
+    test('Testing successful OR statement...', t => {
+        scheme(d, null, err => {
+            if (err) t.fail(new Error(JSON.stringify(err)))
+            else t.pass()
+        })
+    })
+    d.body.c = 'fail'
+    test('Testing unsuccessful OR statement...', t => {
+        scheme(d, null, err => {
+            if (err) t.pass()
+            else t.fail(new Error('Test was unexpectedly successful'))
+        })
+    })
+})
