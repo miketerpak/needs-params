@@ -72,8 +72,8 @@ The following are a list of the valid *type strings*:
 A scheme value can also be one of the following special values:
 * **a function**                    - Custom mutator which takes 1 argument--the param value--and must return the new mutated value, or `undefined` to trigger an error  
 * **an array**                      - You can also provide an array of values. Only the contents of the array will be considered valid values
-* **a double array ([[]])**         - An array is a double array if and only if the outer array contains a single inner array, and nothing more (e.g. `[[1, 2, 3]] or [[[1,2],[[3,4]],5]]`)
-                                    Double arrays contain a set of schemes, of which at **at least 1** of the schemes must be satisfied.  They are tried in ascending order by index
+* **a double array ([[]])**         - An array is a double array if and only if the outer array contains a single inner array, and nothing more (e.g. `[[1, 2, 3]] or [[[1,2],[[3,4]],5]]`).
+                                    Double arrays contain a set of schemes, of which at **at least 1** of the schemes must be satisfied.  They are tried in ascending order by index.
 
 ##### scheme example
 ```javascript
