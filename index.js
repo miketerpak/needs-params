@@ -312,6 +312,7 @@ class Needs {
                         let _data = {}
                         _data[key] = data[key]
                         if ((err = this.validate(_scheme, _data, req, _parent)) === undefined) {
+                            data[key] = _data[key]
                             break
                         }
                     }
