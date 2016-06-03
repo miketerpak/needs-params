@@ -309,8 +309,7 @@ class Needs {
                 } else if (scheme[key].type === 'or') {
                     let err
                     for (let _scheme of scheme[key].subschemes) {
-                        if (!(err = this.validate(_scheme, data, req, _parent))) {
-                            err = null
+                        if ((err = this.validate(_scheme, data, req, _parent)) === undefined) {
                             break
                         }
                     }

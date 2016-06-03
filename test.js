@@ -277,8 +277,7 @@ test('Testing multiple schemes per key (OR)', t => {
             }
         }
     }
-    [1, 2, 3]
-    [['str', 'int', 'float']]
+    
     test('Testing successful OR statement...', t => {
         scheme(d, null, err => {
             if (err) t.fail(new Error(JSON.stringify(err)))
