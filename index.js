@@ -1,7 +1,11 @@
 'use strict'
 
+const _ = require('lodash')
+
 const CLASS_MIDDLEWARE = Symbol('middleware')
 const MIDDLEWARE_SCHEME = Symbol('scheme')
+const REGEX_INT = new RegExp(/^[-]?\d*$/)
+const REGEX_FLOAT = new RegExp(/^[-]?\d*[\.]?\d*$/)
 
 /**
  * TODO test new onError setup
@@ -26,8 +30,7 @@ const parseJSONBody = bodyParser.json({strict: true})
 
 let mutators = { // Mutators return undefined when values are invalid
     int: v => {
-        if (isNaN(v)) return
-        return parseInt(v, 10)
+        return REGEX_INT.test(v) ? parseInt(v, 10) : undefined
     },
     bool: v => {
         v = String(v).toLowerCase()
@@ -46,24 +49,22 @@ let mutators = { // Mutators return undefined when values are invalid
         }
     },
     str: v => {
-        if (typeof v === 'object') return
-        return String(v)
+        return _.isObject(v) ? undefined : String(v)
     },
     float: v => {
-        if (isNaN(v)) return
-        return parseFloat(v)
+        return REGEX_FLOAT.test(v) ? parseFloat(v) : undefined
     },
     datetime: v => {
-        if (typeof v === 'string') {
-            let result = new Date(Date.parse(v))
-            if (isNaN(result)) return
-            return result
-        } else if (typeof v === 'number' && v >= 0) {
+        if (REGEX_INT.test(v)) {
+            return new Date(parseInt(v, 10))
+        } else if (_.isString(v)) {
+            v = Date.parse(v)
+            if (_.isNaN(v)) return
             return new Date(v)
-        } else if (v && v.constructor.name === 'Date') {
+        } else if (_.isDate(v)) {
             return v
         } else {
-            return undefined
+            return
         }
     },
 }
@@ -84,7 +85,7 @@ function buildScheme(_scheme, _parent) {
         let options = { type: null, mutator: null, is_arr: false, arr_len: null,  required: true }
         let lastCharIndex = definition.length - 1
         
-        if (typeof definition === 'function') {
+        if (_.isFunction(definition)) {
             // If the object is a scheme middleware, just use that scheme
             if (definition.__class === CLASS_MIDDLEWARE) {
                 options.type = definition[MIDDLEWARE_SCHEME]
@@ -93,8 +94,8 @@ function buildScheme(_scheme, _parent) {
                 options.type = 'mutator'
                 options.mutator = definition
             }
-        } else if (Array.isArray(definition)) {
-            if (definition.length === 1 && Array.isArray(definition[0])) {
+        } else if (_.isArray(definition)) {
+            if (definition.length === 1 && _.isArray(definition[0])) {
                 let _defs = definition[0]
                 options.type = 'or'
                 options.subschemes = []
@@ -107,9 +108,9 @@ function buildScheme(_scheme, _parent) {
                 options.type = 'set'
                 options.mutator = v => definition.indexOf(v) >= 0 ? v : undefined
             }
-        } else if (typeof definition === 'object') {
+        } else if (_.isObject(definition)) {
             options.type = buildScheme(definition, current_key)
-        } else if (typeof definition === 'string') {
+        } else if (_.isString(definition)) {
             if (definition[lastCharIndex] === ']') {
                 let arrBegin = definition.indexOf('[')
                 options.is_arr = true
@@ -147,7 +148,7 @@ function mergeSchemes(parent, child) {
     for (let key in child) {
         if (parent[key] == null) {
             parent[key] = child[key]
-        } else if (typeof parent[key].type === 'object' && typeof child[key].type === 'object') {
+        } else if (_.isObject(parent[key].type) && _.isObject(child[key].type)) {
             parent[key].type = mergeSchemes(parent[key].type, child[key].type)
         }
     }
@@ -157,28 +158,6 @@ function mergeSchemes(parent, child) {
 function isEmpty(obj) {
     if (!obj) return true
     return Object.keys(obj).length === 0
-}
-
-function cloneObject(obj) {
-    let _obj = {}
-    
-    for (let key in obj) {
-        switch (typeof obj[key]) {
-            case 'function':
-                _obj[key] = obj[key].bind()
-                break
-            case 'object':
-                if (Array.isArray(obj[key])) {
-                    _obj[key] = Array(...obj[key])
-                } else {
-                    _obj[key] = cloneObject(obj[key])
-                }
-            default:
-                _obj[key] = obj[key]
-        }
-    }
-    
-    return _obj
 }
 
 function attachMetadata(scheme, middleware) {
@@ -223,7 +202,7 @@ class Needs {
             if (err.value) errObj.value = err.value
             if (err.expected !== undefined) errObj.expected = err.expected
             
-            if (typeof options.onError === 'function') {
+            if (_.isFunction(options.onError)) {
                 return options.onError(errObj)
             } else {
                 return errObj
@@ -251,8 +230,8 @@ class Needs {
         let scheme = buildScheme(_scheme)
         // NOTE doesn't actually generate middleware, only attaches necessary properties
         return attachMetadata(scheme, (obj, cb) => {
-            if (typeof cb !== 'function') throw new Error('Missing callback')
-            let _obj = cloneObject(obj)
+            if (!_.isFunction(cb)) throw new Error('Missing callback')
+            let _obj = _.clone(obj)
             cb(this.validate(scheme, _obj), _obj)
         })
     }
@@ -308,8 +287,8 @@ class Needs {
             let _current = _parent ? _parent+'['+key+']' : key
             
             if (data[key] !== undefined) {
-                if (typeof scheme[key].type === 'object') {
-                    if (typeof data[key] !== 'object') {
+                if (_.isObject(scheme[key].type)) {
+                    if (!_.isObject(data[key])) {
                         return this.onError({ req: req, msg: 'Invalid parameter type, object expected', param: _current, value: data[key], expected: true })
                     }
                     
@@ -352,9 +331,9 @@ class Needs {
                 
                 ++count
             } else if (scheme[key].required) {
-                // if (typeof scheme[key].type === 'object') {
+                // if (_.isObject(scheme[key].type)) {
                 //     let _type = scheme[key].type
-                //     while (typeof _type === 'object') {
+                //     while (_.isObject(_type)) {
                 //         let _keys = Object.keys(_type)
                 //         _current += '['+_keys[0]+']'
                 //         _type = _type[_keys[0]].type

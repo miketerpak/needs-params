@@ -32,7 +32,7 @@ const
         },
         g: {
             h: new Date(),
-            i: 3.14159,
+            i: 3,
             // j: 34.34
         },
         k: [ new Date(), new Date() ],
