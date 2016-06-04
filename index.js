@@ -1,5 +1,8 @@
 'use strict'
 
+const CLASS_MIDDLEWARE = Symbol('middleware')
+const MIDDLEWARE_SCHEME = Symbol('scheme')
+
 /**
  * TODO test new onError setup
  *  Object literal for mappable values
@@ -82,9 +85,14 @@ function buildScheme(_scheme, _parent) {
         let lastCharIndex = definition.length - 1
         
         if (typeof definition === 'function') {
-            // NOTE Custom mutators must return UNDEFINED on invalid value
-            options.type = 'mutator'
-            options.mutator = definition
+            // If the object is a scheme middleware, just use that scheme
+            if (definition.__class === CLASS_MIDDLEWARE) {
+                options.type = definition[MIDDLEWARE_SCHEME]
+            } else {
+                // NOTE Custom mutators must return UNDEFINED on invalid value
+                options.type = 'mutator'
+                options.mutator = definition
+            }
         } else if (Array.isArray(definition)) {
             if (definition.length === 1 && Array.isArray(definition[0])) {
                 let _defs = definition[0]
@@ -174,10 +182,11 @@ function cloneObject(obj) {
 }
 
 function attachMetadata(scheme, middleware) {
-    middleware.scheme = scheme
+    middleware.__class = CLASS_MIDDLEWARE
+    middleware[MIDDLEWARE_SCHEME] = scheme
     middleware.including = other => {
-        if (!other.scheme) throw new Error('Object passed to .includes was not a needs middleware')
-        middleware.scheme = mergeSchemes(middleware.scheme, other.scheme)
+        if (!other[MIDDLEWARE_SCHEME]) throw new Error('Object passed to .includes was not a needs middleware')
+        middleware[MIDDLEWARE_SCHEME] = mergeSchemes(middleware[MIDDLEWARE_SCHEME], other[MIDDLEWARE_SCHEME])
         return middleware
     }
     return middleware

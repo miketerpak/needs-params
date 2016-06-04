@@ -70,7 +70,8 @@ The following are a list of the valid *type strings*:
 * `date` `time` `datetime`          - JS Date object, accepts millisecond timestamps and formatted datetime strings
 
 A scheme value can also be one of the following special values:
-* **a function**                    - Custom mutator which takes 1 argument--the param value--and must return the new mutated value, or `undefined` to trigger an error  
+* **another needs middleware**      - Applies the passed scheme to the subobject in the master scheme  
+* **a function**                    - Custom mutator which takes 1 argument--the param value--and must return the new mutated value, or `undefined` to trigger an error 
 * **an array**                      - You can also provide an array of values. Only the contents of the array will be considered valid values
 * **a double array ([[]])**         - An array is a double array if and only if the outer array contains a single inner array, and nothing more (e.g. `[[1, 2, 3]] or [[[1,2],[[3,4]],5]]`).
                                     Double arrays contain a set of schemes, of which at **at least 1** of the schemes must be satisfied.  They are tried in ascending order by index.
@@ -90,7 +91,11 @@ A scheme value can also be one of the following special values:
         address_: 'str', // Optional string
         coordinates: 'float[2]' // Int array of size 2, required only if `location` is set
     },
-    verified: 'bool' // Required boolean
+    verified: 'bool', // Required boolean
+    _pagination: needs.params({
+        limit: 'int',
+        _last: 'int'
+    }) // Using middleware generated from needs. In real use, this would be created separately
 }
 ```
 
@@ -161,6 +166,10 @@ var express = require('express')
 var bodyParser = require('body-parser')
 var bcrypt = require('bcrypt')
 var app = express()
+var needs_pagination = needs.params({
+    limit: 'int',
+    _last: 'int'  
+})
     
 app.use(bodyParser.json({strict: true}))
 app.use(bodyParser.urlencoded({extended: true}))
@@ -189,6 +198,14 @@ app.post('/user/register', register_params, function (req, res) {
 
 app.post('/user/me', needs.no.params, function (req, res) {
   // return self
+})
+
+var search_params = needs.params({
+    query: 'str',
+    pagination_: needs_pagination
+})
+app.get('/user/find', search_params, function (req, res) {
+    // search for users
 })
 
 // Error handler

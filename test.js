@@ -292,3 +292,53 @@ test('Testing multiple schemes per key (OR)', t => {
         })
     })
 })
+console.log('')
+test('Testing using other needs functions on parameters', t => {
+    let pagination = needs.params({
+        limit: 'int',
+        last_: 'int',
+        order_: ['desc', 'asc']
+    })
+    let scheme = needs.params({
+        a: 'int',
+        b_: 'str[]',
+        c: [['float', 'bool']],
+        d: 'int[]',
+        e: [1, 5, 9, 'test'],
+        f: [['str', {
+            a: 'int',
+            b_: 'float'
+        }]],
+        page_: pagination
+    })
+    
+    let d = {
+        body: {
+            a: 1,
+            c: 'false',
+            d: [1,2,3],
+            e: 5,
+            f: {
+                a: 3
+            },
+            page: {
+                limit: 3,
+                last: 800
+            }
+        }
+    }
+    
+    test('Testing for success...', t => {
+        scheme(d, null, err => {
+            if (err) t.fail(new Error(JSON.stringify(err)))
+            else t.pass()
+        })
+    })
+    delete d.body.page.limit
+    test('Testing for failure...', t => {
+        scheme(d, null, err => {
+            if (err) t.pass()
+            else t.fail(new Error('Test was unexpectedly successful'))
+        })
+    })
+})
