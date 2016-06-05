@@ -247,11 +247,11 @@ var search_query_params = needs.params({
     },
     before_: 'datetime',
     after_: 'datetime'
-})
-var search_params = search_query_params.including(pagination).including({
-    users_:         [['bool', search_query_params.including(pagination)]],
-    cars_:          [['bool', search_query_params.including(pagination)]],
-    dealerships_:   [['bool', search_query_params.including(pagination)]]
+}).including(pagination)
+var search_params = search_query_params.including({
+    users_:         [['bool', search_query_params]],
+    cars_:          [['bool', search_query_params]],
+    dealerships_:   [['bool', search_query_params]]
 })
 app.get('/search', search_params, function (req, res) {
     // search for users
