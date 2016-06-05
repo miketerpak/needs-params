@@ -2,8 +2,9 @@
 
 const _ = require('lodash')
 
-const CLASS_MIDDLEWARE = Symbol('middleware')
-const MIDDLEWARE_SCHEME = Symbol('scheme')
+const CLASS_FUNCTION = Symbol('needs-params-function')
+const FIELD_SCHEME = Symbol('scheme')
+
 const REGEX_INT = new RegExp(/^[-]?\d*$/)
 const REGEX_FLOAT = new RegExp(/^[-]?\d*[\.]?\d*$/)
 
@@ -87,8 +88,8 @@ function buildScheme(_scheme, _parent) {
         
         if (_.isFunction(definition)) {
             // If the object is a scheme middleware, just use that scheme
-            if (definition.__class === CLASS_MIDDLEWARE) {
-                options.type = definition[MIDDLEWARE_SCHEME]
+            if (definition.__class === CLASS_FUNCTION) {
+                options.type = definition[FIELD_SCHEME]
             } else {
                 // NOTE Custom mutators must return UNDEFINED on invalid value
                 options.type = 'mutator'
@@ -145,14 +146,15 @@ function buildScheme(_scheme, _parent) {
     return scheme
 }
 function mergeSchemes(parent, child) {
+    let result = _.cloneDeep(parent)
     for (let key in child) {
-        if (parent[key] == null) {
-            parent[key] = child[key]
-        } else if (_.isObject(parent[key].type) && _.isObject(child[key].type)) {
-            parent[key].type = mergeSchemes(parent[key].type, child[key].type)
+        if (result[key] == null) {
+            result[key] = child[key]
+        } else if (_.isObject(result[key].type) && _.isObject(child[key].type)) {
+            result[key].type = mergeSchemes(result[key].type, child[key].type)
         }
     }
-    return parent
+    return result
 }
 
 function isEmpty(obj) {
@@ -160,15 +162,21 @@ function isEmpty(obj) {
     return Object.keys(obj).length === 0
 }
 
-function attachMetadata(scheme, middleware) {
-    middleware.__class = CLASS_MIDDLEWARE
-    middleware[MIDDLEWARE_SCHEME] = scheme
-    middleware.including = other => {
-        if (!other[MIDDLEWARE_SCHEME]) throw new Error('Object passed to .includes was not a needs middleware')
-        middleware[MIDDLEWARE_SCHEME] = mergeSchemes(middleware[MIDDLEWARE_SCHEME], other[MIDDLEWARE_SCHEME])
-        return middleware
+function attachMetadata(scheme, func) {
+    func.__class = CLASS_FUNCTION
+    func[FIELD_SCHEME] = scheme
+    func.including = other => {
+        let _scheme = other.__class === CLASS_FUNCTION ? other[FIELD_SCHEME] : buildScheme(other)
+        return attachMetadata(
+            mergeSchemes(func[FIELD_SCHEME], _scheme),
+            function() { func.call(this, ...arguments) }
+        )
     }
-    return middleware
+    return func
+}
+
+function makeFunction() {
+    
 }
 
 /**
@@ -225,13 +233,12 @@ class Needs {
         }
     }
     
-    // TODO Should this clone+return or mutate?
     format(_scheme) {
         let scheme = buildScheme(_scheme)
         // NOTE doesn't actually generate middleware, only attaches necessary properties
         return attachMetadata(scheme, (obj, cb) => {
             if (!_.isFunction(cb)) throw new Error('Missing callback')
-            let _obj = _.clone(obj)
+            let _obj = _.cloneDeep(obj)
             cb(this.validate(scheme, _obj), _obj)
         })
     }

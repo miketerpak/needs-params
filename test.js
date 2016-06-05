@@ -206,18 +206,6 @@ test('Testing including', t => {
     let other_middleware = needs.params({
         required_parameter: 'int'
     })
-    let another_middleware = needs.params({
-        b: {
-            g_: {
-                h: 'str',
-                z: 'int'
-            },
-            i: {
-                x: 'bool',
-                y_: 'bool'
-            }
-        }
-    })
     let middleware = needs.params({
         a: 'int',
         b: {
@@ -230,7 +218,18 @@ test('Testing including', t => {
                 h: 'int[2]'
             } 
         }
-    }).including(other_middleware).including(another_middleware)
+    }).including(other_middleware).including({
+        b: {
+            g_: {
+                h: 'str',
+                z: 'int'
+            },
+            i: {
+                x: 'bool',
+                y_: 'bool'
+            }
+        }
+    })
     let data = {
         a: 2,
         b: {
