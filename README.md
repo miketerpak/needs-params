@@ -191,7 +191,7 @@ var register_params = needs.params({
         coordinates: 'float[2]'
     },
     verified: 'bool'
-});
+})
 app.post('/user/register', register_params, function (req, res) {
   // register user
 })
@@ -210,9 +210,62 @@ app.get('/user/find', search_params, function (req, res) {
 
 // Error handler
 app.use(function(err, req, res, next) {
-    req.status(400).send(err);
-});
+    req.status(400).send(err)
+})
 ```
+
+
+### In-Depth Example
+
+The following example uses a universal searching endpoint.  Users can query all objects based on
+the base parameters.  You can also exclude object types by passing `[object_type]=false`, OR 
+query that object seperately with a seperate set of query data passed in as an object to the
+`object_type` parameter.
+
+```javascript
+var needs = require('needs-params')()
+var express = require('express')
+var bodyParser = require('body-parser')
+var app = express()
+    
+app.use(bodyParser.json({strict: true}))
+app.use(bodyParser.urlencoded({extended: true}))
+
+var pagination = needs.params({
+    limit: 'int',
+    last_: 'int',
+    order_: ['asc', 'desc']
+})
+var search_query_params = needs.params({
+    query: 'str',
+    location_: {
+        street_: 'str',
+        city_: 'str',
+        county_: 'str',
+        state_: 'str',
+        country_: 'str'
+    },
+    before_: 'datetime',
+    after_: 'datetime'
+})
+var search_params = search_query_params.including(pagination).including({
+    users_:         [['bool', search_query_params.including(pagination)]],
+    cars_:          [['bool', search_query_params.including(pagination)]],
+    dealerships_:   [['bool', search_query_params.including(pagination)]]
+})
+app.get('/search', search_params, function (req, res) {
+    // search for users
+})
+
+// Error handler
+app.use(function(err, req, res, next) {
+    req.status(400).send(err)
+})
+```
+
+The result is a scheme that allows querying by a querystring, location, or datetime for all objects, as well
+as the optional excluding or seperate querying of each object type, with each subquery containing the same
+parameters as the master query.
 
 ## License
 [MIT](https://raw.githubusercontent.com/miketerpak/needs-params/master/LICENSE)
