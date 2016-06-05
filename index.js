@@ -169,14 +169,10 @@ function attachMetadata(scheme, func) {
         let _scheme = other.__class === CLASS_FUNCTION ? other[FIELD_SCHEME] : buildScheme(other)
         return attachMetadata(
             mergeSchemes(func[FIELD_SCHEME], _scheme),
-            function() { func.call(this, ...arguments) }
+            function() { return func.call(this, ...arguments) }
         )
     }
     return func
-}
-
-function makeFunction() {
-    
 }
 
 /**
