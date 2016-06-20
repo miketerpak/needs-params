@@ -146,7 +146,7 @@ function buildScheme(_scheme, _parent) {
     return scheme
 }
 function mergeSchemes(parent, child) {
-    let result = _.cloneDeep(parent)
+    let result = parent //_.cloneDeep(parent)
     for (let key in child) {
         if (result[key] == null) {
             result[key] = child[key]
@@ -167,10 +167,7 @@ function attachMetadata(scheme, func) {
     func[FIELD_SCHEME] = scheme
     func.including = other => {
         let _scheme = other.__class === CLASS_FUNCTION ? other[FIELD_SCHEME] : buildScheme(other)
-        return attachMetadata(
-            mergeSchemes(func[FIELD_SCHEME], _scheme),
-            function() { return func.call(this, ...arguments) }
-        )
+        return attachMetadata(mergeSchemes(func[FIELD_SCHEME], _scheme), func.bind())
     }
     return func
 }
