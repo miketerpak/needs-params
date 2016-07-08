@@ -66,6 +66,7 @@ The following are a list of the valid *type strings*:
 * `int` `integer`                   - Whole number (takes floor if not whole)
 * `bool` `boolean`                  - Boolean, acceptable values include `t`, `true`, `1` and `f`, `false`, `0`, `-1`
 * `str` `string`                    - String value
+* `null`                            - Null value, including `null`, `"null"` (case-insensitive), `"%00"`, `""`
 * `float` `num` `numeric` `number`  - Floating point number
 * `date` `time` `datetime`          - JS Date object, accepts millisecond timestamps and formatted datetime strings
 

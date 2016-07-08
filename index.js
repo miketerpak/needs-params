@@ -55,6 +55,13 @@ let mutators = { // Mutators return undefined when values are invalid
     float: v => {
         return REGEX_FLOAT.test(v) ? parseFloat(v) : undefined
     },
+    null: v => {
+        if (_.isString(v)) {
+            return ['%00', 'null', ''].includes(v.toLowerCase());
+        } else {
+            return v === null;
+        }
+    },
     datetime: v => {
         if (REGEX_INT.test(v)) {
             return new Date(parseInt(v, 10))
