@@ -57,9 +57,9 @@ let mutators = { // Mutators return undefined when values are invalid
     },
     null: v => {
         if (_.isString(v)) {
-            return ['%00', 'null', ''].includes(v.toLowerCase());
+            return ['%00', 'null', ''].includes(v.toLowerCase()) ? null : undefined;
         } else {
-            return v === null;
+            return v === null ? null : undefined;
         }
     },
     datetime: v => {
