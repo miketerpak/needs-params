@@ -93,9 +93,9 @@ A scheme value can also be one of the following special values:
         coordinates: 'float[2]' // Int array of size 2, required only if `location` is set
     },
     verified: 'bool', // Required boolean
-    _pagination: needs.params({
+    pagination_: needs.params({
         limit: 'int',
-        _last: 'int'
+        last_: 'int'
     }) // Using middleware generated from needs. In real use, this would be created separately
 }
 ```
@@ -169,7 +169,7 @@ var bcrypt = require('bcrypt')
 var app = express()
 var needs_pagination = needs.params({
     limit: 'int',
-    _last: 'int'  
+    last_: 'int'  
 })
     
 app.use(bodyParser.json({strict: true}))
