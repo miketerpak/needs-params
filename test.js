@@ -370,3 +370,39 @@ test('Testing string length limits', t => {
         })
     })
 })
+console.log('')
+test('Testing custom mutators', t => {
+    let scheme = needs.params({
+        mutator1_: val => val === "hi" ? val : undefined,
+        mutator2_: val => val === "hi" ? [val] : [, { code: 'test-error', msg: "Don't panic!" }]
+    })
+    
+    let d = {
+        body: {
+            mutator1: 'hi',
+            mutator2: 'hi'
+        }
+    }
+    
+    test('Testing for success...', t => {
+        scheme(d, null, err => {
+            if (err) t.fail(new Error(JSON.stringify(err)))
+            else t.pass()
+        })
+    })
+    d.body.mutator1 = 'bye'
+    test('Testing for failure on mutator 1...', t => {
+        scheme(d, null, err => {
+            if (err) t.pass()
+            else t.fail(new Error('Test was unexpectedly successful'))
+        })
+    })
+    d.body.mutator1 = 'hi'
+    d.body.mutator2 = 'bye'
+    test('Testing for failure on mutator 2...', t => {
+        scheme(d, null, err => {
+            if (err) t.pass()
+            else t.fail(new Error('Test was unexpectedly successful'))
+        })
+    })
+})
