@@ -21,11 +21,12 @@ spat values (i.e. `/user/:id`) and header values can be formatted in the same wa
 
 
 #### `options`
+
 `options.strict` 	- Returns an error when unexpected parameters are received, default `true`
 
 `options.onError`	- Custom error handler. Handler should return the error object to be forwarded to the error handler via `next`, default forwards `{ req, msg, code, param, value }` to `next` 
 
-##### onError: Example
+#### onError: Example
 ```javascript
 /**
   * options.req - Express request object
@@ -50,12 +51,12 @@ var needs = require('needs-params')({
 })
 ```
 
-##### onError: Error Codes
+#### onError: Error Codes
 
 These are the error codes build into needs.params, and their corresponding default error messages.
 They are found in the `onError` function, under the parameter `err.code` and `err.msg` respectively
 
-When creating custom mutators, you can provide your own error codes and messages as seen [Custom middleware example](here).
+When creating custom mutators, you can provide your own error codes and messages as seen [here](Custom mutator example).
 
 * `missing-required`: `Missing required parameter`,
 * `invalid-value`: `Invalid parameter value` || `Invalid paramter value, expected ${expected_value}`,
@@ -87,12 +88,12 @@ The following are a list of the valid *type strings*:
 
 A scheme value can also be one of the following special values:
 * **another needs middleware**      - Applies the passed scheme to the subobject in the master scheme  
-* **a function**                    - Custom mutator which takes 1 argument--the param value--and must return the following scheme: `[value,err]`.  [Custom middleware example](Example)
+* **a function**                    - Custom mutator which takes 1 argument--the param value--and must return the following scheme: `[value,err]`.  [Example](Custom mutator example)
 * **an array**                      - You can also provide an array of values. Only the contents of the array will be considered valid values
 * **a double array ([[]])**         - An array is a double array if and only if the outer array contains a single inner array, and nothing more (e.g. `[[1, 2, 3]] or [[[1,2],[[3,4]],5]]`).
                                     Double arrays contain a set of schemes, of which at **at least 1** of the schemes must be satisfied.  They are tried in ascending order by index.
 
-##### Custom middleware example
+##### Custom mutator example
 
 ```javascript
 needs.params({
