@@ -88,7 +88,7 @@ The following are a list of the valid *type strings*:
 
 A scheme value can also be one of the following special values:
 * **another needs middleware**      - Applies the passed scheme to the subobject in the master scheme  
-* **a function**                    - Custom mutator which takes 1 argument--the param value--and must return the following scheme: `[value,err]`.  see *Custom mutator example*
+* **a function**                    - Custom mutator which takes 1 argument--the param value--and must return the parameter value on success, undefined on generic failure, or the following scheme for providing custom error fields: `[value,err]`.  see *Custom mutator example*
 * **an array**                      - You can also provide an array of values. Only the contents of the array will be considered valid values
 * **a double array ([[]])**         - An array is a double array if and only if the outer array contains a single inner array, and nothing more (e.g. `[[1, 2, 3]] or [[[1,2],[[3,4]],5]]`).
                                     Double arrays contain a set of schemes, of which at **at least 1** of the schemes must be satisfied.  They are tried in ascending order by index.
@@ -105,7 +105,9 @@ needs.params({
         if (year < new Date().getFullYear() - 150) return [, { code: 'dob-error', msg: 'You are not over 150 years old' }] // Custom error type and message for special case
         // NOTE you can also supply parameters other than `code` and `msg` that will be forwarded to `onError`
 
-        return [year] // success!
+        return year // success!
+        // NOTE the [value, error] scheme only has to be used when returning custom error messages.
+        //      otherwise, return the value on success, or undefined for a generic `invalid parameter` failure
     }
 })
 ```

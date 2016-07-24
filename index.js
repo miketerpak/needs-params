@@ -330,9 +330,9 @@ class Needs {
                             return this.onError({ req: req, code: 'invalid-arr-len', msg: errors['invalid-arr-len'](scheme[key].length), param: _current, value: data[key].length })
                         }
                         for (let i = data[key].length - 1; i >= 0; --i) {
-                            let [val, err] = func(data[key][i]);
-                            if (err) {
-                                delete err.req
+                            let result = func(data[key][i], scheme[key].length);
+                            let [val, err] = _.isArray(result) ? result : [result];
+                            if (err || val === undefined) {
                                 let _err = {
                                     req: req,
                                     code: 'invalid-value',
@@ -340,15 +340,15 @@ class Needs {
                                     param: _current,
                                     value: data[key]
                                 }
-                                Object.assign(_err, err)
+                                if (_.isObject(err)) Object.assign(_err, err)
                                 return this.onError(_err)
                             }
                             data[key][i] = val
                         }
                     } else {
-                        let [val, err] = func(data[key], scheme[key].length)
-                        if (err) {
-                            delete err.req
+                        let result = func(data[key], scheme[key].length)
+                        let [val, err] = _.isArray(result) ? result : [result];
+                        if (err || val === undefined) {
                             let _err = {
                                 req: req,
                                 code: 'invalid-value',
@@ -356,7 +356,7 @@ class Needs {
                                 param: _current,
                                 value: data[key]
                             }
-                            Object.assign(_err, err)
+                            if (_.isObject(err)) Object.assign(_err, err)
                             return this.onError(_err)
                         }
                         data[key] = val
