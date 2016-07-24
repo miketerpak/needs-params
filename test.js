@@ -344,3 +344,29 @@ test('Testing using other needs functions on parameters', t => {
         })
     })
 })
+console.log('')
+test('Testing string length limits', t => {
+    let scheme = needs.params({
+        str: 'string10'
+    })
+    
+    let d = {
+        body: {
+            str: 'thisisten.'
+        }
+    }
+    
+    test('Testing for success...', t => {
+        scheme(d, null, err => {
+            if (err) t.fail(new Error(JSON.stringify(err)))
+            else t.pass()
+        })
+    })
+    d.body.str += 'But this is more than 10.'
+    test('Testing for failure...', t => {
+        scheme(d, null, err => {
+            if (err) t.pass()
+            else t.fail(new Error('Test was unexpectedly successful'))
+        })
+    })
+})

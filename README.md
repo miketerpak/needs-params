@@ -23,32 +23,47 @@ spat values (i.e. `/user/:id`) and header values can be formatted in the same wa
 #### `options`
 `options.strict` 	- Returns an error when unexpected parameters are received, default `true`
 
-`options.onError`	- Custom error handler. Handler should return the error object to be forwarded to the error handler via `next`, default forwards `{ message, parameter, value, expected }` to `next` 
+`options.onError`	- Custom error handler. Handler should return the error object to be forwarded to the error handler via `next`, default forwards `{ req, msg, code, param, value }` to `next` 
 
-##### onError Example
+##### onError: Example
 ```javascript
 /**
   * options.req - Express request object
   * options.message - Error message
   * options.parameter - Parameter that caused error
   * options.value - Invalid parameter value
-  * options.expected - `true` if the parameter was expected, yet invalid.  `false` if not found on schema
   */
 var needs = require('needs-params')({
-    onError: function (options) {
+    onError: function ({ req, code, msg, param, value } = {}) {
         console.log( // Log error info
             'Parameter-Error',
             '[IP: ' + req.connection.remoteAddress + ']',
-            options.message, options.parameter, options.value
+            msg, param, value
         )
 
-        // error object to be forwarded to `next`
-        // NOTE: The handler can also return nothing or undefined, which does not forward
-        // an error to `next`, and thus not failing on invalid data values
-        return Error(options.message)
+        // Return error data to be sent to `#next`.
+        // Sending undefined will ignore the needs-params error and continue
+        // the route normally.  This example ignores all unexected parameter issues
+        if (code === 'param-unexpected') return
+        else return Error(msg)
     }
 })
 ```
+
+##### onError: Error Codes
+
+These are the error codes build into needs.params, and their corresponding default error messages.
+They are found in the `onError` function, under the parameter `err.code` and `err.msg` respectively
+
+When creating custom mutators, you can provide your own error codes and messages as seen [Custom middleware example](here).
+
+* `missing-required`: `Missing required parameter`,
+* `invalid-value`: `Invalid parameter value` || `Invalid paramter value, expected ${expected_value}`,
+* `param-unexpected`: `Unexpected parameter(s)`,
+* `header-unexpected`: `Unexpected header(s)`,
+* `param-missing`: `Missing expected parameter`,
+* `invalid-arr-len`: `Array length must be ${len}`,
+* `invalid-str-len`: `String too long, max length is ${maxlen}`
 
 ### Generate parameter middleware
 
@@ -65,22 +80,39 @@ brackets requires all submitted arrays to be of the given size (i.e. `coordinate
 The following are a list of the valid *type strings*:
 * `int` `integer`                   - Whole number (takes floor if not whole)
 * `bool` `boolean`                  - Boolean, acceptable values include `t`, `true`, `1` and `f`, `false`, `0`, `-1`
-* `str` `string`                    - String value
+* `strX` `stringX`                  - String value.  X is an optional max length
 * `null`                            - Null value, including `null`, `"null"` (case-insensitive), `"%00"`, `""`
 * `float` `num` `numeric` `number`  - Floating point number
 * `date` `time` `datetime`          - JS Date object, accepts millisecond timestamps and formatted datetime strings
 
 A scheme value can also be one of the following special values:
 * **another needs middleware**      - Applies the passed scheme to the subobject in the master scheme  
-* **a function**                    - Custom mutator which takes 1 argument--the param value--and must return the new mutated value, or `undefined` to trigger an error 
+* **a function**                    - Custom mutator which takes 1 argument--the param value--and must return the following scheme: `[value,err]`.  [Custom middleware example](Example)
 * **an array**                      - You can also provide an array of values. Only the contents of the array will be considered valid values
 * **a double array ([[]])**         - An array is a double array if and only if the outer array contains a single inner array, and nothing more (e.g. `[[1, 2, 3]] or [[[1,2],[[3,4]],5]]`).
                                     Double arrays contain a set of schemes, of which at **at least 1** of the schemes must be satisfied.  They are tried in ascending order by index.
 
+##### Custom middleware example
+
+```javascript
+needs.params({
+    birthyear: year => {
+        year = parseInt(year, 10)
+        if (isNaN(year)) return [, { }] // Return empty error object for default type and message
+        if (year < 0) return [, { msg: 'Year must be positive' }] // Custom error message for negative numbers (default `invalid-value` error code)
+        if (year > new Date().getFullYear()) return [, { code: 'dob-error', msg: 'You cannot have been born in the future' }] // Custom error type and message for special case
+        if (year < new Date().getFullYear() - 150) return [, { code: 'dob-error', msg: 'You are not over 150 years old' }] // Custom error type and message for special case
+        // NOTE you can also supply parameters other than `code` and `msg` that will be forwarded to `onError`
+
+        return [year] // success!
+    }
+})
+```
+
 ##### scheme example
 ```javascript
 {   // Scheme for user registration
-    email: 'str',   // Required string
+    email: 'str256',   // Required string
     password: utils.hashPassword,   // Custom mutator, returns null on invalid value, else mutated value
     country: [ 'us', 'ca' ], // Set of permitted countries
     age_: [[
@@ -183,7 +215,7 @@ function hashPassword(password) {
 }
 
 var register_params = needs.params({
-    email: 'str',
+    email: 'str256',
     password: hashPassword,
     country: [ 'us', 'ca' ],
     age_: 'int',
@@ -243,7 +275,7 @@ var search_query_params = needs.params({
         street_: 'str',
         city_: 'str',
         county_: 'str',
-        state_: 'str',
+        state_: 'str2',
         country_: 'str'
     },
     before_: 'datetime',

@@ -8,13 +8,7 @@ const FIELD_SCHEME = Symbol('scheme')
 const REGEX_INT = new RegExp(/^[-]?\d*$/)
 const REGEX_FLOAT = new RegExp(/^[-]?\d*[\.]?\d*$/)
 
-/**
- * TODO test new onError setup
- *  Object literal for mappable values
- *  Ability to provide array meaning value can only be one in the set 
- *  
- * 
- * How to use:
+/** How to use:
  * 
  * Module takes in scheme, returns middleware for parameter validation
  * 
@@ -29,9 +23,18 @@ const bodyParser = require("body-parser")
 const parseUrlencodedBody = bodyParser.urlencoded({extended: true})
 const parseJSONBody = bodyParser.json({strict: true})
 
+let errors = {
+    'missing-required': 'Missing required parameter',
+    'invalid-value': expected => `Invalid parameter value${expected ? `, expected ${expected}` : ''}`,
+    'param-unexpected': 'Unexpected parameter(s)',
+    'header-unexpected': 'Unexpected header(s)',
+    'param-missing': 'Missing expected parameter',
+    'invalid-arr-len': len => `Array length must be ${len}`,
+    'invalid-str-len': len => `String too long, max length is ${len}`
+}
 let mutators = { // Mutators return undefined when values are invalid
     int: v => {
-        return REGEX_INT.test(v) ? parseInt(v, 10) : undefined
+        return REGEX_INT.test(v) ? [parseInt(v, 10)] : [, { msg: errors['invalid-value']('integer') }]
     },
     bool: v => {
         v = String(v).toLowerCase()
@@ -39,40 +42,40 @@ let mutators = { // Mutators return undefined when values are invalid
             case 't':
             case 'true':
             case '1':
-                return true
+                return [true]
             case 'f':
             case 'false':
             case '0':
             case '-1':
-                return false
+                return [false]
             default:
-                return
+                return [, { msg: errors['invalid-value']('boolean') }]
         }
     },
-    str: v => {
-        return _.isObject(v) ? undefined : String(v)
+    str: (v, l) => {
+        let result = _.isObject(v) ? undefined : String(v)
+        if (result === undefined) return [, { code: 'invalid-str-len', msg: errors['invalid-value']('string') }]
+        else if (!isNaN(l)) return result.length > l ? [, { code: 'invalid-str-len', msg: errors['invalid-str-len'](l) }] : [result]
+        else return [v]
     },
     float: v => {
-        return REGEX_FLOAT.test(v) ? parseFloat(v) : undefined
+        return REGEX_FLOAT.test(v) ? [parseFloat(v)] : [, { msg: errors['invalid-value']('float') }]
     },
     null: v => {
-        if (_.isString(v)) {
-            return ['%00', 'null', ''].includes(v.toLowerCase()) ? null : undefined;
-        } else {
-            return v === null ? null : undefined;
-        }
+        if (v === null) return [null]
+        return ['%00', 'null', ''].includes(String(v).toLowerCase()) ? [null] : [, { msg: errors['invalid-type']('null') }]
     },
     datetime: v => {
         if (REGEX_INT.test(v)) {
-            return new Date(parseInt(v, 10))
+            return [new Date(parseInt(v, 10))]
         } else if (_.isString(v)) {
             v = Date.parse(v)
-            if (_.isNaN(v)) return
-            return new Date(v)
+            if (_.isNaN(v)) return [, { msg: errors['invalid-type']('datetime') }]
+            return [new Date(v)]
         } else if (_.isDate(v)) {
-            return v
+            return [v]
         } else {
-            return
+            return [, { msg: errors['invalid-type']('datetime') }]
         }
     },
 }
@@ -90,7 +93,7 @@ function buildScheme(_scheme, _parent) {
     for (let key in _scheme) {
         let current_key = _parent ? _parent + '['+key+']' : key
         let definition = _scheme[key]
-        let options = { type: null, mutator: null, is_arr: false, arr_len: null,  required: true }
+        let options = { type: null, mutator: null, is_arr: false, length: null,  required: true }
         let lastCharIndex = definition.length - 1
         
         if (_.isFunction(definition)) {
@@ -114,7 +117,13 @@ function buildScheme(_scheme, _parent) {
                 }
             } else {
                 options.type = 'set'
-                options.mutator = v => definition.indexOf(v) >= 0 ? v : undefined
+                options.mutator = v => {
+                    if (definition.indexOf(v) >= 0) return [v]
+                    else {
+                        let expecteds = definition.map(d => _.isString(d) ? `"${d}"` : String(d)).join('/')
+                        return [, { msg: errors['invalid-value'](expecteds) }]
+                    } 
+                }
             }
         } else if (_.isObject(definition)) {
             options.type = buildScheme(definition, current_key)
@@ -127,11 +136,23 @@ function buildScheme(_scheme, _parent) {
                     let arrlen = definition.substr(arrBegin+1, lastCharIndex - arrBegin - 1)
                     if (arrlen) {
                         if (isNaN(arrlen)) throw Error('Invalid route parameter array length')
-                        options.arr_len = parseInt(arrlen, 10)
+                        options.length = parseInt(arrlen, 10)
                     }
                 }
                 
                 definition = definition.substr(0, arrBegin)
+            } else {
+                let numRegex = definition.match(/[\d]+/)
+                if (numRegex) {
+                    options.length = parseInt(numRegex[0], 10)
+                    definition = definition.replace(numRegex[0], '')
+
+                    if (isNaN(options.length)) {
+                        throw Error('Invalid route parameter length on type ' + numRegex.input)
+                    } else if (!mutators[definition]) {
+                        throw Error('Invalid route parameter type ' + definition)
+                    }
+                }
             }
             
             if (!mutators[definition]) {
@@ -201,33 +222,21 @@ class Needs {
     constructor(options) {
         options = options || {}
         this.strict = options.strict === undefined ? true : options.strict
-        this.onError = (err) => { //req, msg, key, value, expected
-            let errObj = {}
-            
-            if (err.req) errObj.request = err.req
-            if (err.msg) errObj.message = err.msg
-            if (err.param) errObj.param = err.param
-            if (err.value) errObj.value = err.value
-            if (err.expected !== undefined) errObj.expected = err.expected
-            
-            if (_.isFunction(options.onError)) {
-                return options.onError(errObj)
-            } else {
-                return errObj
-            }
+        this.onError = (err = {}) => { //req, code, msg, key, value
+            return _.isFunction(options.onError) ? options.onError(err) : err
         }
         
         this.no = {
             headers: (req, res, next) => {
                 if (!req.headers) return next()
                 let keys = Object.keys(req.headers)
-                if (keys.length) return next(this.onError({ req: req, msg: 'Unexpected header', param: keys[0], value: req.headers[keys[0]], expected: false }))
+                if (keys.length) return next(this.onError({ req: req,  code: 'header-unexpected', msg: errors['header-unexpected'], param: keys[0], value: req.headers[keys[0]] }))
                 next()
             },
             params: (req, res, next) => {
                 let data = req.body || req.query || {}
                 let keys = Object.keys(data)
-                if (keys.length) return next(this.onError({ req: req, msg: 'Unexpected parameter', param: keys[0], value: data[keys[0]], expected: false }))
+                if (keys.length) return next(this.onError({ req: req, code: 'param-unexpected', msg: errors['param-unexpected'], param: keys[0], value: data[keys[0]] }))
                 next()
             }
         }
@@ -296,7 +305,7 @@ class Needs {
             if (data[key] !== undefined) {
                 if (_.isObject(scheme[key].type)) {
                     if (!_.isObject(data[key])) {
-                        return this.onError({ req: req, msg: 'Invalid parameter type, object expected', param: _current, value: data[key], expected: true })
+                        return this.onError({ req: req, code: 'invalid-value', msg: errors['invalid-value']('object'), param: _current, value: data[key] })
                     }
                     
                     let err = this.validate(scheme[key].type, data[key], req, _current)
@@ -311,26 +320,44 @@ class Needs {
                             break
                         }
                     }
-                    if (err) return this.onError({ req: req, msg: 'Invalid parameter value', param: _current, value: data[key], expected: true })
+                    if (err) return this.onError({ req: req, code: 'invalid-value', msg: errors['invalid-value'](), param: _current, value: data[key] })
                 } else {
-                    let func = scheme[key].type === 'mutator' || scheme[key].type === 'set' ? scheme[key].mutator : mutators[scheme[key].type]
-                    
+                    let func = (scheme[key].type === 'mutator' || scheme[key].type === 'set') ? scheme[key].mutator : mutators[scheme[key].type]
+
                     if (scheme[key].is_arr) {
                         if (!Array.isArray(data[key])) data[key] = [data[key]]
-                        if (scheme[key].arr_len && data[key].length !== scheme[key].arr_len) {
-                            return this.onError({ req: req, msg: 'Array length must be ' + scheme[key].arr_len, param: _current, value: data[key].length, expected: true })
+                        if (scheme[key].length && data[key].length !== scheme[key].length) {
+                            return this.onError({ req: req, code: 'invalid-arr-len', msg: errors['invalid-arr-len'](scheme[key].length), param: _current, value: data[key].length })
                         }
                         for (let i = data[key].length - 1; i >= 0; --i) {
-                            let val = func(data[key][i])
-                            if (val === undefined) {
-                                return this.onError({ req: req, msg: 'Invalid parameter value', param: _current, value: data[key], expected: true })
+                            let [val, err] = func(data[key][i]);
+                            if (err) {
+                                delete err.req
+                                let _err = {
+                                    req: req,
+                                    code: 'invalid-value',
+                                    msg: errors['invalid-value'](),
+                                    param: _current,
+                                    value: data[key]
+                                }
+                                Object.assign(_err, err)
+                                return this.onError(_err)
                             }
                             data[key][i] = val
                         }
                     } else {
-                        let val = func(data[key])
-                        if (val === undefined) {
-                            return this.onError({ req: req, msg: 'Invalid parameter value', param: _current, value: data[key], expected: true })
+                        let [val, err] = func(data[key], scheme[key].length)
+                        if (err) {
+                            delete err.req
+                            let _err = {
+                                req: req,
+                                code: 'invalid-value',
+                                msg: errors['invalid-value'](),
+                                param: _current,
+                                value: data[key]
+                            }
+                            Object.assign(_err, err)
+                            return this.onError(_err)
                         }
                         data[key] = val
                     }
@@ -338,24 +365,17 @@ class Needs {
                 
                 ++count
             } else if (scheme[key].required) {
-                // if (_.isObject(scheme[key].type)) {
-                //     let _type = scheme[key].type
-                //     while (_.isObject(_type)) {
-                //         let _keys = Object.keys(_type)
-                //         _current += '['+_keys[0]+']'
-                //         _type = _type[_keys[0]].type
-                //     }
-                // }
-                
-                return this.onError({ req: req, msg: 'Missing expected parameter', param: _current, value: data[key], expected: true })
+                return this.onError({ req: req, code: 'param-missing', msg: errors['param-missing'], param: _current })
             }
         }
         
         if (this.strict && count !== Object.keys(data).length) {
             // get the first unexpected parameter and report as unexpected
+            let u_params = []
             for (let key in data) {
-                if (!scheme[key]) return this.onError({ req: req, msg: 'Unexpected parameter', param: (_parent ? _parent+'['+key+']' : key), value: data[key], expected: false })
+                if (!scheme[key]) u_params.push(_parent ? _parent+'['+key+']' : key)
             }
+            this.onError({ req: req, code: 'param-unexpected', msg: errors['param-unexpected'], param: (u_params.length === 1 ? u_params[0] : u_params) })
         }
     }
 }
