@@ -55,7 +55,7 @@ let mutators = { // Mutators return undefined when values are invalid
     str: (v, l) => {
         let result = _.isObject(v) ? undefined : String(v)
         if (result === undefined) return [, { code: 'invalid-str-len', msg: errors['invalid-value']('string') }]
-        else if (!isNaN(l)) return result.length > l ? [, { code: 'invalid-str-len', msg: errors['invalid-str-len'](l) }] : [result]
+        else if (l && !isNaN(l)) return result.length > l ? [, { code: 'invalid-str-len', msg: errors['invalid-str-len'](l) }] : [result]
         else return [v]
     },
     float: v => {

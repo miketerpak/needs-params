@@ -9,7 +9,7 @@ const
     testScheme = {
         a: 'int',
         b: 'boolean[3]',
-        c_: 'str',
+        c: 'str',
         d: {
             e: 'float',
             f_: 'num'
@@ -26,7 +26,7 @@ const
     dataPass = {
         a: 55,
         b: [true, true, false],
-        // c: 'test',
+        c: 'test',
         d: {
             e: 34857.534,
             f: -300
