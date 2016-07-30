@@ -70,12 +70,12 @@ let mutators = { // Mutators return undefined when values are invalid
             return [new Date(parseInt(v, 10))]
         } else if (_.isString(v)) {
             v = Date.parse(v)
-            if (_.isNaN(v)) return [, { msg: errors['invalid-type']('datetime') }]
+            if (_.isNaN(v)) return [, { msg: errors['invalid-value']('datetime') }]
             return [new Date(v)]
         } else if (_.isDate(v)) {
             return [v]
         } else {
-            return [, { msg: errors['invalid-type']('datetime') }]
+            return [, { msg: errors['invalid-value']('datetime') }]
         }
     },
 }
