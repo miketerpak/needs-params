@@ -1,6 +1,6 @@
 {
   "name": "needs-params",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Generates Express middleware that formats and enforces a parameter scheme",
   "main": "index.js",
   "scripts": {

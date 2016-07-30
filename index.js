@@ -298,6 +298,19 @@ class Needs {
     
     validate(scheme, data, req, _parent) {
         let count = 0 // Counter used to count processed fields and detect any extraneous fields
+        
+        if (this.strict) {
+            let unexpected_params = _.difference(Object.keys(data), Object.keys(scheme));
+            if (unexpected_params.length) {
+                return this.onError({
+                    req,
+                    code: 'param-unexpected',
+                    msg: errors['param-unexpected'],
+                    param: unexpected_params.length === 1 ? unexpected_params[0] : unexpected_params
+                })
+            }
+        }
+
         for (let key in scheme) {
             // For returning correct parameter if errored
             let _current = _parent ? _parent+'['+key+']' : key
@@ -367,15 +380,6 @@ class Needs {
             } else if (scheme[key].required) {
                 return this.onError({ req: req, code: 'param-missing', msg: errors['param-missing'], param: _current })
             }
-        }
-        
-        if (this.strict && count !== Object.keys(data).length) {
-            // get the first unexpected parameter and report as unexpected
-            let u_params = []
-            for (let key in data) {
-                if (!scheme[key]) u_params.push(_parent ? _parent+'['+key+']' : key)
-            }
-            this.onError({ req: req, code: 'param-unexpected', msg: errors['param-unexpected'], param: (u_params.length === 1 ? u_params[0] : u_params) })
         }
     }
 }

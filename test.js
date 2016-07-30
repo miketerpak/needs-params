@@ -187,18 +187,19 @@ test('Testing needs.no.headers', t => {
 })
 console.log('')
 test('Testing strict mode', t => {
-    let middleware = needs_strict.params(testScheme)
+    let middleware = needs_strict.params({
+        a: 'int'
+    })
     
     test('Testing for success on GET...', t => {
-        middleware({ query: dataPass }, null, err => {
+        middleware({ query: { a: 1 } }, null, err => {
             if (err) t.fail(new Error(JSON.stringify(err)))
             else t.pass()
         })
     })
     
-    dataPass.unexpected_parameter = 'Nobody expects the Spanish inquisition!'
     test('Testing for failure on GET...', t => {
-        middleware({ query: dataFail }, null, err => {
+        middleware({ query: { rgekwufcerngcf: 4, a: 4 } }, null, err => {
             if (err) t.pass()
             else t.fail(new Error('Test was unexpectedly successful'))
         })
