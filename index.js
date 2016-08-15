@@ -118,11 +118,15 @@ function buildScheme(_scheme, _parent) {
             } else {
                 options.type = 'set'
                 options.mutator = v => {
-                    if (definition.indexOf(v) >= 0) return [v]
-                    else {
-                        let expecteds = definition.map(d => _.isString(d) ? `"${d}"` : String(d)).join('/')
-                        return [, { msg: errors['invalid-value'](expecteds) }]
-                    } 
+                    for (let d of definition) {
+                        if (d == v) {
+                            let tmp = d.constructor(v)
+                            return [tmp === NaN ? undefine : tmp]
+                        }
+                    }
+                    
+                    let expecteds = definition.map(d => _.isString(d) ? `"${d}"` : String(d)).join('/')
+                    return [, { msg: errors['invalid-value'](expecteds) }]
                 }
             }
         } else if (_.isObject(definition)) {
@@ -300,7 +304,7 @@ class Needs {
         let count = 0 // Counter used to count processed fields and detect any extraneous fields
         
         if (this.strict) {
-            let unexpected_params = _.difference(Object.keys(data), Object.keys(scheme));
+            let unexpected_params = _.difference(Object.keys(data), Object.keys(scheme))
             if (unexpected_params.length) {
                 return this.onError({
                     req,
@@ -343,8 +347,8 @@ class Needs {
                             return this.onError({ req: req, code: 'invalid-arr-len', msg: errors['invalid-arr-len'](scheme[key].length), param: _current, value: data[key].length })
                         }
                         for (let i = data[key].length - 1; i >= 0; --i) {
-                            let result = func(data[key][i], scheme[key].length);
-                            let [val, err] = _.isArray(result) ? result : [result];
+                            let result = func(data[key][i], scheme[key].length)
+                            let [val, err] = _.isArray(result) ? result : [result]
                             if (err || val === undefined) {
                                 let _err = {
                                     req: req,
@@ -360,7 +364,7 @@ class Needs {
                         }
                     } else {
                         let result = func(data[key], scheme[key].length)
-                        let [val, err] = _.isArray(result) ? result : [result];
+                        let [val, err] = _.isArray(result) ? result : [result]
                         if (err || val === undefined) {
                             let _err = {
                                 req: req,

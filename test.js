@@ -21,7 +21,8 @@ const
         },
         k: 'datetime[]',
         l: ['one', 2, 0x3, '4'],
-        m: [['int', 'null']]
+        m: [['int', 'null']],
+        n: [1, 2, 3, 4, 5],
     },
     dataPass = {
         a: 55,
@@ -38,7 +39,8 @@ const
         },
         k: [ new Date(), new Date() ],
         l: 0x3,
-        m: 'null'
+        m: 'null',
+        n: '3'
     },
     dataFail = {
         a: 55,
@@ -55,7 +57,8 @@ const
         },
         k: [ new Date(), 7 ],
         l: 8,
-        m: 0
+        m: 0,
+        n: 3
     }
 
 
