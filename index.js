@@ -63,7 +63,7 @@ let mutators = { // Mutators return undefined when values are invalid
     },
     null: v => {
         if (v === null) return [null]
-        return ['%00', 'null', ''].includes(String(v).toLowerCase()) ? [null] : [, { msg: errors['invalid-type']('null') }]
+        return ['%00', 'null', ''].includes(String(v).toLowerCase()) ? [null] : [, { msg: errors['invalid-value']('null') }]
     },
     datetime: v => {
         if (REGEX_INT.test(v)) {
