@@ -23,6 +23,7 @@ const
         l: ['one', 2, 0x3, '4'],
         m: [['int', 'null']],
         n: [1, 2, 3, 4, 5],
+        o: 'obj'
     },
     dataPass = {
         a: 55,
@@ -40,7 +41,16 @@ const
         k: [ new Date(), new Date() ],
         l: 0x3,
         m: 'null',
-        n: '3'
+        n: '3',
+        o: {
+            random: {
+                js: {
+                    object: {
+                        for: 'you'
+                    }
+                }
+            }
+        }
     },
     dataFail = {
         a: 55,
@@ -58,7 +68,8 @@ const
         k: [ new Date(), 7 ],
         l: 8,
         m: 0,
-        n: 3
+        n: 3,
+        o: {}
     }
 
 

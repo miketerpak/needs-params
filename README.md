@@ -85,6 +85,7 @@ The following are a list of the valid *type strings*:
 * `null`                            - Null value, including `null`, `"null"` (case-insensitive), `"%00"`, `""`
 * `float` `num` `numeric` `number`  - Floating point number
 * `date` `time` `datetime`          - JS Date object, accepts millisecond timestamps and formatted datetime strings
+* `object` `obj`                    - Any valid JS object.  Note, when using `object`, there is no control over the content of the object. If this control is required, please use a nested `needs.params` scheme (see example).
 
 A scheme value can also be one of the following special values:
 * **another needs middleware**      - Applies the passed scheme to the subobject in the master scheme  

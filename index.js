@@ -33,9 +33,6 @@ let errors = {
     'invalid-str-len': len => `String too long, max length is ${len}`
 }
 let mutators = { // Mutators return undefined when values are invalid
-    int: v => {
-        return REGEX_INT.test(v) ? [parseInt(v, 10)] : [, { msg: errors['invalid-value']('integer') }]
-    },
     bool: v => {
         v = String(v).toLowerCase()
         switch (v) {
@@ -52,19 +49,6 @@ let mutators = { // Mutators return undefined when values are invalid
                 return [, { msg: errors['invalid-value']('boolean') }]
         }
     },
-    str: (v, l) => {
-        let result = _.isObject(v) ? undefined : String(v)
-        if (result === undefined) return [, { code: 'invalid-str-len', msg: errors['invalid-value']('string') }]
-        else if (l && !isNaN(l)) return result.length > l ? [, { code: 'invalid-str-len', msg: errors['invalid-str-len'](l) }] : [result]
-        else return [v]
-    },
-    float: v => {
-        return REGEX_FLOAT.test(v) ? [parseFloat(v)] : [, { msg: errors['invalid-value']('float') }]
-    },
-    null: v => {
-        if (v === null) return [null]
-        return ['%00', 'null', ''].includes(String(v).toLowerCase()) ? [null] : [, { msg: errors['invalid-value']('null') }]
-    },
     datetime: v => {
         if (REGEX_INT.test(v)) {
             return [new Date(parseInt(v, 10))]
@@ -78,13 +62,33 @@ let mutators = { // Mutators return undefined when values are invalid
             return [, { msg: errors['invalid-value']('datetime') }]
         }
     },
+    float: v => {
+        return REGEX_FLOAT.test(v) ? [parseFloat(v)] : [, { msg: errors['invalid-value']('float') }]
+    },
+    int: v => {
+        return REGEX_INT.test(v) ? [parseInt(v, 10)] : [, { msg: errors['invalid-value']('integer') }]
+    },
+    null: v => {
+        if (v === null) return [null]
+        return ['%00', 'null', ''].includes(String(v).toLowerCase()) ? [null] : [, { msg: errors['invalid-value']('null') }]
+    },
+    object: o => {
+        return _.isObject(o) ? o : [, { msg: errors['invalid-value']('object') }]
+    },
+    str: (v, l) => {
+        let result = _.isObject(v) ? undefined : String(v)
+        if (result === undefined) return [, { code: 'invalid-str-len', msg: errors['invalid-value']('string') }]
+        else if (l && !isNaN(l)) return result.length > l ? [, { code: 'invalid-str-len', msg: errors['invalid-str-len'](l) }] : [result]
+        else return [v]
+    },
 }
 // Aliases
-mutators.integer = mutators.int
 mutators.boolean = mutators.bool
-mutators.string = mutators.str
-mutators.number = mutators.numeric = mutators.num = mutators.float
 mutators.date = mutators.time = mutators.timestamp = mutators.datetime
+mutators.integer = mutators.int
+mutators.number = mutators.numeric = mutators.num = mutators.float
+mutators.obj = mutators.object;
+mutators.string = mutators.str
 
 // Builds the scheme object that is used by needs to validate and format incoming parameters
 function buildScheme(_scheme, _parent) {
