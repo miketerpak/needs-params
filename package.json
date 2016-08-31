@@ -1,6 +1,6 @@
 {
   "name": "needs-params",
-  "version": "2.0.8",
+  "version": "3.0.0",
   "description": "Generates Express middleware that formats and enforces a parameter scheme",
   "main": "index.js",
   "scripts": {
@@ -25,7 +25,6 @@
   },
   "homepage": "https://github.com/miketerpak/needs-params#readme",
   "dependencies": {
-      "lodash": "^4.13.1",
-      "body-parser": "^1.15.1"
+      "lodash": "^4.13.1"
   }
 }

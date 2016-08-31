@@ -84,34 +84,17 @@ const
 function test(msg, t) {
     console.info(msg)
     t({
-        pass: msg => console.info('\x1b[32m Passed \x1b[0m'),
+        pass: () => console.info('\x1b[32m Passed \x1b[0m'),
         fail: err => { throw err || 'Failed' }
     })
 }
 
-test('Testing needs.format on plain object...', t => {
-    let format = needs.format(testScheme)
-    
-    test('Testing successful format...', t => {
-        format(dataPass, (err, result) => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
-            else t.pass()
-        })
-    })
-    test('Testing unsuccessful format...', t => {
-        format(dataFail, (err, result) => {
-            if (err) t.pass()
-            else t.fail(new Error('Test was unexpectedly successful'))
-        })
-    })
-})
-console.log('')
 test('Testing needs.headers...', t => {
     let check = needs.headers(testScheme)
-        
+
     test('Testing for success...', t => {
         check({ headers: dataPass }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
+            if (err) t.fail(err)
             else t.pass()
         })
     })
@@ -123,30 +106,65 @@ test('Testing needs.headers...', t => {
     })
 })
 console.log('')
-test('Testing needs.params...', t => {
-    let middleware = needs.params(testScheme)
+test('Testing needs.spat...', t => {
+    let check = needs.spat(testScheme)
+
+    test('Testing for success...', t => {
+        check({ params: dataPass }, null, err => {
+            if (err) t.fail(err)
+            else t.pass()
+        })
+    })
+    test('Testing for failure...', t => {
+        check({ params: dataFail }, null, err => {
+            if (err) t.pass()
+            else t.fail(new Error('Test was unexpectedly successful'))
+        })
+    })
+})
+console.log('')
+test('Testing needs.query...', t => {
+    let check = needs.querystring(testScheme)
+        
+    test('Testing for success...', t => {
+        check({ query: dataPass }, null, err => {
+            if (err) t.fail(err)
+            else t.pass()
+        })
+    })
+    test('Testing for failure...', t => {
+        check({ query: dataFail }, null, err => {
+            if (err) t.pass()
+            else t.fail(new Error('Test was unexpectedly successful'))
+        })
+    })
+})
+console.log('')
+test('Testing needs.body...', t => {
+    let post_middleware = needs.body(testScheme)
+    let get_middleware = needs.querystring(testScheme)
     
     test('Testing for success on POST...', t => {
-        middleware({ body: dataPass }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
+        post_middleware({ body: dataPass }, null, err => {
+            if (err) t.fail(err)
             else t.pass()
         })
     })
     test('Testing for success on GET...', t => {
-        middleware({ query: dataPass }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
+        get_middleware({ query: dataPass }, null, err => {
+            if (err) t.fail(err)
             else t.pass()
         })
     })
     
     test('Testing for failure on POST...', t => {
-        middleware({ body: dataFail }, null, err => {
+        post_middleware({ body: dataFail }, null, err => {
             if (err) t.pass()
             else t.fail(new Error('Test was unexpectedly successful'))
         })
     })
     test('Testing for failure on GET...', t => {
-        middleware({ query: dataFail }, null, err => {
+        get_middleware({ query: dataFail }, null, err => {
             if (err) t.pass()
             else t.fail(new Error('Test was unexpectedly successful'))
         })
@@ -154,29 +172,27 @@ test('Testing needs.params...', t => {
 })
 console.log('')
 test('Testing needs.no.params...', t => {
-    let middleware = needs.no.params
-    
     test('Testing for success on POST...', t => {
-        middleware({ body: {} }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
+        needs.no.body({ body: {} }, null, err => {
+            if (err) t.fail(err)
             else t.pass()
         })
     })
     test('Testing for success on GET...', t => {
-        middleware({ query: {} }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
+        needs.no.querystring({ query: {} }, null, err => {
+            if (err) t.fail(err)
             else t.pass()
         })
     })
     
     test('Testing for failure on POST...', t => {
-        middleware({ body: dataFail }, null, err => {
+        needs.no.body({ body: dataFail }, null, err => {
             if (err) t.pass()
             else t.fail(new Error('Test was unexpectedly successful'))
         })
     })
     test('Testing for failure on GET...', t => {
-        middleware({ query: dataFail }, null, err => {
+        needs.no.querystring({ query: dataFail }, null, err => {
             if (err) t.pass()
             else t.fail(new Error('Test was unexpectedly successful'))
         })
@@ -188,7 +204,7 @@ test('Testing needs.no.headers', t => {
         
     test('Testing for success...', t => {
         check({ headers: {} }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
+            if (err) t.fail(err)
             else t.pass()
         })
     })
@@ -201,13 +217,13 @@ test('Testing needs.no.headers', t => {
 })
 console.log('')
 test('Testing strict mode', t => {
-    let middleware = needs_strict.params({
+    let middleware = needs_strict.querystring({
         a: 'int'
     })
     
     test('Testing for success on GET...', t => {
         middleware({ query: { a: 1 } }, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
+            if (err) t.fail(err)
             else t.pass()
         })
     })
@@ -221,10 +237,10 @@ test('Testing strict mode', t => {
 })
 console.log('')
 test('Testing including', t => {
-    let other_middleware = needs.params({
+    let other_middleware = needs.body({
         required_parameter: 'int'
     })
-    let middleware = needs.params({
+    let middleware = needs.body({
         a: 'int',
         b: {
             c_: 'str',
@@ -265,14 +281,14 @@ test('Testing including', t => {
     
     test('Testing chained inclusions...', t => {
         middleware({ query: data }, null, (req, res, err) => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
+            if (err) t.fail(err)
             else t.pass()
         })
     })
 })
 console.log('')
 test('Testing multiple schemes per key (OR)', t => {
-    let scheme = needs.params({
+    let scheme = needs.body({
         a: 'int',
         b_: 'str[]',
         c: [['float', 'bool']],
@@ -297,7 +313,7 @@ test('Testing multiple schemes per key (OR)', t => {
     
     test('Testing successful OR statement...', t => {
         scheme(d, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
+            if (err) t.fail(err)
             else t.pass()
         })
     })
@@ -311,12 +327,12 @@ test('Testing multiple schemes per key (OR)', t => {
 })
 console.log('')
 test('Testing using other needs functions on parameters', t => {
-    let pagination = needs.params({
+    let pagination = needs.body({
         limit: 'int',
         last_: 'int',
         order_: ['desc', 'asc']
     })
-    let scheme = needs.params({
+    let scheme = needs.body({
         a: 'int',
         b_: 'str[]',
         c: [['float', 'bool']],
@@ -347,7 +363,7 @@ test('Testing using other needs functions on parameters', t => {
     
     test('Testing for success...', t => {
         scheme(d, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
+            if (err) t.fail(err)
             else t.pass()
         })
     })
@@ -361,7 +377,7 @@ test('Testing using other needs functions on parameters', t => {
 })
 console.log('')
 test('Testing string length limits', t => {
-    let scheme = needs.params({
+    let scheme = needs.body({
         str: 'string10'
     })
     
@@ -373,7 +389,7 @@ test('Testing string length limits', t => {
     
     test('Testing for success...', t => {
         scheme(d, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
+            if (err) t.fail(err)
             else t.pass()
         })
     })
@@ -387,9 +403,9 @@ test('Testing string length limits', t => {
 })
 console.log('')
 test('Testing custom mutators', t => {
-    let scheme = needs.params({
+    let scheme = needs.body({
         mutator1_: val => val === "hi" ? val : undefined,
-        mutator2_: val => val === "hi" ? [val] : [, { code: 'test-error', msg: "Don't panic!" }]
+        mutator2_: val => val === "hi" ? val : new Error('TEST')
     })
     
     let d = {
@@ -401,11 +417,11 @@ test('Testing custom mutators', t => {
     
     test('Testing for success...', t => {
         scheme(d, null, err => {
-            if (err) t.fail(new Error(JSON.stringify(err)))
+            if (err) t.fail(err)
             else t.pass()
         })
     })
-    d.body.mutator1 = 'bye'
+    d.body.mutator2 = 'bye'
     test('Testing for failure on mutator 1...', t => {
         scheme(d, null, err => {
             if (err) t.pass()
