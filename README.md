@@ -51,24 +51,28 @@ var needs = require('needs-params')({
 })
 ```
 
-#### onError: Error Codes
+#### Error Codes
 
-These are the error codes build into needs.params, and their corresponding default error messages.
-They are found in the `onError` function, under the parameter `err.code` and `err.msg` respectively
+These are the error codes build into needs-params.
+
+Errors are returned in the form of a `NeedsError`, which is an extension of the regular `Error` object.
 
 When creating custom mutators, you can provide your own error codes and messages as seen in *Custom mutator example*.
 
-* `missing-required`: `Missing required parameter`,
-* `invalid-value`: `Invalid parameter value` || `Invalid paramter value, expected ${expected_value}`,
-* `param-unexpected`: `Unexpected parameter(s)`,
-* `header-unexpected`: `Unexpected header(s)`,
-* `param-missing`: `Missing expected parameter`,
-* `invalid-arr-len`: `Array length must be ${len}`,
-* `invalid-str-len`: `String too long, max length is ${maxlen}`
+Parameters:
+
+param_names - Comma seperated array string of invalid parameters
+param_value - The value of the invalid parameter
+message - Text describing error
+name - One of the following types:
+* `invalid-value` - The value of the parameter is not valid
+* `param-unexpected` - An unexpected parameter was sent
+* `param-expected` - A required parameter is missing
+* `invalid-length` - The object length (string, array, etc.) is invalid
 
 ### Generate parameter middleware
 
-    var param_middleware = needs.params(scheme)
+    var param_middleware = needs.body(scheme)
 
 #### `scheme`
 
@@ -97,7 +101,7 @@ A scheme value can also be one of the following special values:
 ##### Custom mutator example
 
 ```javascript
-needs.params({
+needs.body({
     birthyear: year => {
         year = parseInt(year, 10)
         if (isNaN(year)) return [, { }] // Return empty error object for default type and message
@@ -129,7 +133,7 @@ needs.params({
         coordinates: 'float[2]' // Int array of size 2, required only if `location` is set
     },
     verified: 'bool', // Required boolean
-    pagination_: needs.params({
+    pagination_: needs.body({
         limit: 'int',
         last_: 'int'
     }) // Using middleware generated from needs. In real use, this would be created separately
@@ -139,9 +143,9 @@ needs.params({
 ### Combining middleware
 
 ```javascript
-let pagination_middleware = needs.params(...)
+let pagination_middleware = needs.querystring(...)
 ...
-let param_middleware = needs.params(...).including(pagination_middleware)
+let param_middleware = needs.querystring(...).including(pagination_middleware)
 ```
 
 You can merge the schemes of two middlewares together.  This is different from simply applying one middleware after
@@ -191,7 +195,11 @@ applied in the original is not overwritten by any subsequent inclusions.
 
 These preset middlewares are used to require that no values be sent 
 
-`needs.no.params` - Don't accept any parameters through the body or query string
+`needs.no.body` - Don't accept any parameters in the body
+
+`needs.no.querystring` - Don't accept any parameters in the querystring
+
+`needs.no.spat` - Don't accept any parameters in the URL
 
 `needs.no.headers` - Don't accept any headers
 
@@ -203,7 +211,7 @@ var express = require('express')
 var bodyParser = require('body-parser')
 var bcrypt = require('bcrypt')
 var app = express()
-var needs_pagination = needs.params({
+var needs_pagination = needs.query({
     limit: 'int',
     last_: 'int'  
 })

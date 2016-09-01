@@ -8,6 +8,11 @@ const FIELD_SCHEME = Symbol('scheme')
 const REGEX_INT = new RegExp(/^[-]?\d*$/)
 const REGEX_FLOAT = new RegExp(/^[-]?\d*[\.]?\d*$/)
 
+/**
+ * TODO:
+ *      Reintroduce needs.params ONLY for nested needs definitions?
+ */
+
 /** How to use:
  * 
  * Module takes in scheme, returns middleware for parameter validation
