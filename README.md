@@ -12,44 +12,15 @@ Express parameter formatting and validation
     
 ## Usage
 
-**needs-params** stores the processed bodies into `req.body` and `req.query` for the body and query string respectively, via the function `needs.params(...)`.
+**needs-params** applies parameter formatting and validation on the body, query string, spat or headers of the request, using `needs.body`, `needs.querystring`, `needs.spat` and `needs.headers`, respectively.
 
-If **needs-params** receives a raw body, it is parsed with `body-parser`.  For parsing JSON bodies, `bodyParser.json({strict: true})` is used, while for url encoded form data, `bodyParser.urlencoded({extended: true})` is used.
-If the body is already parsed (`req.body` is set), this step is ignored.
-
-spat values (i.e. `/user/:id`) and header values can be formatted in the same way, using `needs.spat(...)` and `needs.headers(...)` respectively.
+**NOTE** needs-params does not parse request bodies, headers, querystrings or spat.  It relies on the Express.JS format of using `req.body`, `req.query`, `req.spat` and `req.headers` to store request information. 
 
 
 #### `options`
 
 `options.strict` 	- Returns an error when unexpected parameters are received, default `true`
 
-`options.onError`	- Custom error handler. Handler should return the error object to be forwarded to the error handler via `next`, default forwards `{ req, msg, code, param, value }` to `next` 
-
-#### onError: Example
-```javascript
-/**
-  * options.req - Express request object
-  * options.message - Error message
-  * options.parameter - Parameter that caused error
-  * options.value - Invalid parameter value
-  */
-var needs = require('needs-params')({
-    onError: function ({ req, code, msg, param, value } = {}) {
-        console.log( // Log error info
-            'Parameter-Error',
-            '[IP: ' + req.connection.remoteAddress + ']',
-            msg, param, value
-        )
-
-        // Return error data to be sent to `#next`.
-        // Sending undefined will ignore the needs-params error and continue
-        // the route normally.  This example ignores all unexected parameter issues
-        if (code === 'param-unexpected') return
-        else return Error(msg)
-    }
-})
-```
 
 #### Error Codes
 
@@ -57,7 +28,7 @@ These are the error codes build into needs-params.
 
 Errors are returned in the form of a `NeedsError`, which is an extension of the regular `Error` object.
 
-When creating custom mutators, you can provide your own error codes and messages as seen in *Custom mutator example*.
+When creating custom mutators, you can use custom errors as seen in *Custom mutator example*.
 
 Parameters:
 
@@ -92,7 +63,7 @@ The following are a list of the valid *type strings*:
 * `object` `obj`                    - Any valid JS object.  Note, when using `object`, there is no control over the content of the object. If this control is required, please use a nested `needs.params` scheme (see example).
 
 A scheme value can also be one of the following special values:
-* **another needs middleware**      - Applies the passed scheme to the subobject in the master scheme  
+* **another needs middleware**      - Applies the passed scheme to the subobject in the master scheme. Function used to create the middleware does not matter. For example, you can use a `needs.querystring` middleware inside of a `needs.body` definition.
 * **a function**                    - Custom mutator which takes 1 argument--the param value--and must return the parameter value on success, undefined on generic failure, or the following scheme for providing custom error fields: `[value,err]`.  see *Custom mutator example*
 * **an array**                      - You can also provide an array of values. Only the contents of the array will be considered valid values
 * **a double array ([[]])**         - An array is a double array if and only if the outer array contains a single inner array, and nothing more (e.g. `[[1, 2, 3]] or [[[1,2],[[3,4]],5]]`).
@@ -104,10 +75,10 @@ A scheme value can also be one of the following special values:
 needs.body({
     birthyear: year => {
         year = parseInt(year, 10)
-        if (isNaN(year)) return [, { }] // Return empty error object for default type and message
-        if (year < 0) return [, { msg: 'Year must be positive' }] // Custom error message for negative numbers (default `invalid-value` error code)
-        if (year > new Date().getFullYear()) return [, { code: 'dob-error', msg: 'You cannot have been born in the future' }] // Custom error type and message for special case
-        if (year < new Date().getFullYear() - 150) return [, { code: 'dob-error', msg: 'You are not over 150 years old' }] // Custom error type and message for special case
+        if (isNaN(year)) return new Error('Invalid value for year') // Return empty error object for default type and message
+        if (year < 0) return new Error('A year must be positive') // Custom error message for negative numbers (default `invalid-value` error code)
+        if (year > new Date().getFullYear()) return new Error('You cannot have been born in the future' ) // Custom error type and message for special case
+        if (year < new Date().getFullYear() - 150) return new Error('You are not over 150 years old') // Custom error type and message for special case
         // NOTE you can also supply parameters other than `code` and `msg` that will be forwarded to `onError`
 
         return year // success!
@@ -211,7 +182,7 @@ var express = require('express')
 var bodyParser = require('body-parser')
 var bcrypt = require('bcrypt')
 var app = express()
-var needs_pagination = needs.query({
+var needs_pagination = needs.querystring({
     limit: 'int',
     last_: 'int'  
 })
@@ -226,7 +197,7 @@ function hashPassword(password) {
     return bcrypt.hashSync(password, 10)
 }
 
-var register_params = needs.params({
+var register_params = needs.body({
     email: 'str256',
     password: hashPassword,
     country: [ 'us', 'ca' ],
@@ -241,17 +212,19 @@ app.post('/user/register', register_params, function (req, res) {
   // register user
 })
 
-app.post('/user/me', needs.no.params, function (req, res) {
+app.post('/user/me', needs.no.body, function (req, res) {
   // return self
 })
 
-var search_params = needs.params({
-    query: 'str',
-    pagination_: needs_pagination
-})
-app.get('/user/find', search_params, function (req, res) {
-    // search for users
-})
+app.get('/user/find',
+    needs.querystring({
+        query: 'str',
+        pagination_: needs_pagination
+    }),
+    function (req, res) {
+        // search for users
+    }
+)
 
 // Error handler
 app.use(function(err, req, res, next) {
@@ -276,12 +249,12 @@ var app = express()
 app.use(bodyParser.json({strict: true}))
 app.use(bodyParser.urlencoded({extended: true}))
 
-var pagination = needs.params({
+var pagination = needs.querystring({
     limit: 'int',
     last_: 'int',
     order_: ['asc', 'desc']
 })
-var search_query_params = needs.params({
+var search_query_params = needs.querystring({
     query: 'str',
     location_: {
         street_: 'str',
@@ -294,7 +267,7 @@ var search_query_params = needs.params({
     after_: 'datetime'
 }).including(pagination)
 var search_params = search_query_params.including({
-    users_:         [['bool', search_query_params]],
+    users_:         [['bool', search_query_params]], // false = don't return
     cars_:          [['bool', search_query_params]],
     dealerships_:   [['bool', search_query_params]]
 })
@@ -307,10 +280,6 @@ app.use(function(err, req, res, next) {
     req.status(400).send(err)
 })
 ```
-
-The result is a scheme that allows querying by a querystring, location, or datetime for all objects, as well
-as the optional excluding or seperate querying of each object type, with each subquery containing the same
-parameters as the master query.
 
 ## License
 [MIT](https://raw.githubusercontent.com/miketerpak/needs-params/master/LICENSE)
