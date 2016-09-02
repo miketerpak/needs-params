@@ -209,7 +209,7 @@ function buildScheme(_scheme, _parent) {
                 if (lastCharIndex - arrBegin > 1) {
                     let arrlen = definition.substr(arrBegin+1, lastCharIndex - arrBegin - 1)
                     if (arrlen) {
-                        if (isNaN(arrlen)) throw NeedsError('Invalid route parameter array length')
+                        if (isNaN(arrlen)) throw new NeedsError('Invalid route parameter array length')
                         options.length = parseInt(arrlen, 10)
                     }
                 }
@@ -314,7 +314,7 @@ class Needs {
             if (unexpected_params.length) {
                 let err = new NeedsError(`Unexpected parameter(s)`)
                 err.name = ETYPES.PARAM_UNEXPECTED
-                err.param_names = Object.keys(data).join(',')
+                err.param_names = Object.keys(unexpected_params).join(',')
                 return err
             }
         }
