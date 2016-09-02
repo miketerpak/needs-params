@@ -314,7 +314,7 @@ class Needs {
             if (unexpected_params.length) {
                 let err = new NeedsError(`Unexpected parameter(s)`)
                 err.name = ETYPES.PARAM_UNEXPECTED
-                err.param_names = Object.keys(unexpected_params).join(',')
+                err.param_names = unexpected_params.join(',')
                 return err
             }
         }
