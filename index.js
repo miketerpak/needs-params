@@ -222,18 +222,18 @@ function buildScheme(_scheme, _parent) {
                     definition = definition.replace(numRegex[0], '')
 
                     if (isNaN(options.length)) {
-                        throw NeedsError('Invalid route parameter length on type ' + numRegex.input)
+                        throw new NeedsError('Invalid route parameter length on type ' + numRegex.input)
                     } else if (!mutators[definition]) {
-                        throw NeedsError('Invalid route parameter type ' + definition)
+                        throw new NeedsError('Invalid route parameter type ' + definition)
                     }
                 }
             }
             
             if (!mutators[definition]) {
-                throw NeedsError('Invalid route parameter type ' + definition)
+                throw new NeedsError('Invalid route parameter type ' + definition)
             }
         } else {
-            throw NeedsError('Invalid route parameter scheme on key ' + current_key)
+            throw new NeedsError('Invalid route parameter scheme on key ' + current_key)
         }
         
         if (key[key.length-1] === '_') {
