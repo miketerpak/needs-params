@@ -323,6 +323,34 @@ class Needs {
         }
     }
 
+    /**
+     * Creates a formattor, or formats the given object if one is provided
+     * 
+     * NOTE: This function mutates the 
+     * 
+     * @param {object} scheme 
+     * @param {*} [obj] optional data to format
+     * 
+     * @returns {(function|*)} if obj is given, returns fformatted result, else returns formatter function
+     */
+    format(scheme) {
+        let _this = this;
+        scheme = buildScheme(scheme);
+
+        let func = function() {
+            let clone = _.cloneDeep(arguments[0]);
+            let err = _this.validate(scheme, clone);
+            if (err) throw err;
+            return clone;
+        };
+
+        if (arguments.length > 1) {
+            return func(arguments[1]);
+        } else {
+            return func;
+        }
+    }
+
     body(scheme) {
         return this.__middleware(scheme, 'body')
     }

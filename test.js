@@ -160,7 +160,6 @@ test('Testing needs.body...', t => {
     test('Testing for failure on POST...', t => {
         post_middleware({ body: dataFail }, null, err => {
             if (err) t.pass()
-            else t.fail(new Error('Test was unexpectedly successful'))
         })
     })
     test('Testing for failure on GET...', t => {
@@ -168,6 +167,45 @@ test('Testing needs.body...', t => {
             if (err) t.pass()
             else t.fail(new Error('Test was unexpectedly successful'))
         })
+    })
+})
+console.log('')
+test('Testing needs.format...', t => {
+    test('Testing for success (with arg2)...', t => {
+        try {
+            let result = needs.format({ test_: 'str', test2: [1,2,3] }, { test2: 3 });
+            t.pass();
+        } catch (e) {
+            t.fail(e);
+        }
+    })
+    test('Testing for failure (with arg2)...', t => {
+        try {
+            let result = needs.format({ test_: 'str', test2: [1,2,3] }, { test2: 7 });
+            t.fail(new Error('Test was unexpectedly successful'))
+        } catch (e) {
+            t.pass();
+        }
+    })
+    test('Testing for success (no arg2)...', t => {
+        let formatter = needs.format({ test_: 'str', test2: [1,2,3] });
+
+        try {
+            let result = formatter({ test2: 3 });
+            t.pass();
+        } catch (e) {
+            t.fail(e);
+        }
+    })
+    test('Testing for failure (no arg2)...', t => {
+        let formatter = needs.format({ test_: 'str', test2: [1,2,3] });
+
+        try {
+            let result = formatter({ test2: 7 });
+            t.fail(new Error('Test was unexpectedly successful'))
+        } catch (e) {
+            t.pass();
+        }
     })
 })
 console.log('')
