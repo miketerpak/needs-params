@@ -63,6 +63,8 @@ The following are a list of the valid *type strings*:
 * `object` `obj`                    - Any valid JS object.  Note, when using `object`, there is no control over the content of the object. If this control is required, please use a nested `needs.params` scheme (see example).
 
 A scheme value can also be one of the following special values:
+* **a numerical range**             - A inclusive/exclusive range can be specified with `[min, max]`/`(min, max)` respectively. Exclusivity can be mixed (i.e. `(min, max]`)
+* **a regular expression**          - Validates the parameter value against the provided regular expression
 * **another needs middleware**      - Applies the passed scheme to the subobject in the master scheme. Function used to create the middleware does not matter. For example, you can use a `needs.querystring` middleware inside of a `needs.body` definition.
 * **a function**                    - Custom mutator which takes 1 argument--the param value--and must return the parameter value on success, undefined on generic failure, or the following scheme for providing custom error fields: `[value,err]`.  see *Custom mutator example*
 * **an array**                      - You can also provide an array of values. Only the contents of the array will be considered valid values
@@ -91,11 +93,12 @@ needs.body({
 ##### scheme example
 ```javascript
 {   // Scheme for user registration
+    username: new RegExp('^[A-Za-z0-9_-]{5,16}$'), // Username regex
     email: 'str256',   // Required string
     password: utils.hashPassword,   // Custom mutator, returns null on invalid value, else mutated value
     country: [ 'us', 'ca' ], // Set of permitted countries
     age_: [[
-        'int',
+        '(0, 120]', // Acceptable date range
         'date',
         { d: 'int', m: 'int', y: 'int' }
     ]], // Optional age, accepting an int, isodate, or the provided date schema

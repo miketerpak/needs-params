@@ -437,3 +437,59 @@ test('Testing custom mutators', t => {
         })
     })
 })
+
+test('Testing processing RegExp validation', t => {
+    let scheme = needs.body({
+        string: /(test).*/
+    })
+    let d = {
+        body: {
+            string: 'test here'
+        }
+    }
+
+    test('Testing for successful validation', t => {
+        scheme(d, null, err => {
+            if (err) t.fail(err)
+            else t.pass()
+        })
+    })
+    d.body.string = 'failure'
+    test('Testing for successful validation', t => {
+        scheme(d, null, err => {
+            if (err) t.pass()
+            else t.fail(new Error('Test was unexpectedly successful'))
+        })
+    })
+})
+
+test('Testing processing ranges', t => {
+    let scheme = needs.body({
+        num1: '[10.5,11]',
+        num2: '(10.5,11)',
+        num3: '[10.5,11)',
+        num4: '(10.5,11]'
+    })
+    let d = {
+        body: {
+            num1: 11,
+            num2: 10.9999999,
+            num3: 10.5,
+            num4: 11
+        }
+    }
+
+    test('Testing for successful validation', t => {
+        scheme(d, null, err => {
+            if (err) t.fail(err)
+            else t.pass()
+        })
+    })
+    d.body.num4 = 10.5
+    test('Testing for successful validation', t => {
+        scheme(d, null, err => {
+            if (err) t.pass()
+            else t.fail(new Error('Test was unexpectedly successful'))
+        })
+    })
+})

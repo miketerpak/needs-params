@@ -199,10 +199,43 @@ function buildScheme(_scheme, _parent) {
                     return err
                 }
             }
+        } else if (_.isRegExp(definition)) {
+            options.type = 'mutator'
+            options.mutator = val => {
+                val = String(val)
+                return definition.test(val)
+                    ? val
+                    : new NeedsError(`Invalid value: ${val}`);
+            }
         } else if (_.isObject(definition)) {
             options.type = buildScheme(definition, current_key)
         } else if (_.isString(definition)) {
-            if (definition[lastCharIndex] === ']') {
+            if (definition[0] === '[' || definition[0] === '(') {
+                if (definition[lastCharIndex] !== ']' && definition[lastCharIndex] !== ')') {
+                    throw new NeedsError('Invalid range. Range definitions must end in "]" or ")"')
+                }
+
+                // Substr because ranges are wrapped in brackets or parenthesis
+                let [min = NaN, max = NaN] = definition.substr(1, definition.length - 2).split(',').map(parseFloat)
+                let min_inclusive = definition[0] === '['
+                let max_inclusive = definition[lastCharIndex] === ']'
+
+                if (isNaN(min) || isNaN(max)) {
+                    throw new NeedsError('Invalid value(s) in range')
+                } else if (min >= max) {
+                    throw new NeedsError('Invalid values in range. Minimum value must be less than maximum value.')
+                }
+
+                options.type = 'mutator'
+                options.mutator = val => {
+                    val = parseFloat(val)
+                    if (!isNaN(val) && (min_inclusive ? val >= min : val > min) && ( max_inclusive ? val <= max : val < max)) {
+                        return val
+                    } else {
+                        return new NeedsError(`Invalid value "${val}" for range ${min_inclusive?'[':'('}${min},${max}${max_inclusive?']':')'}`)
+                    }
+                }
+            } else if (definition[lastCharIndex] === ']') {
                 let arrBegin = definition.indexOf('[')
                 options.is_arr = true
                 
@@ -229,7 +262,7 @@ function buildScheme(_scheme, _parent) {
                 }
             }
             
-            if (!mutators[definition]) {
+            if (options.type !== 'mutator' && !mutators[definition]) {
                 throw new NeedsError('Invalid route parameter type ' + definition)
             }
         } else {
