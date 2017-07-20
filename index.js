@@ -5,12 +5,13 @@ const _ = require('lodash')
 const CLASS_FUNCTION = Symbol('needs-params-function')
 const FIELD_SCHEME = Symbol('scheme')
 
-const REGEX_INT = new RegExp(/^[-]?\d*$/)
-const REGEX_FLOAT = new RegExp(/^[-]?\d*[\.]?\d*$/)
+const REGEX_INT = new RegExp(/^[-]?\d*$/) // regexp for identifying an integer
+const REGEX_FLOAT = new RegExp(/^[-]?\d*[\.]?\d*$/) // regexp for identifying a floating point number
 
 /**
  * TODO:
  *      Reintroduce needs.params ONLY for nested needs definitions?
+ *      Separate classes out into their own files
  */
 
 /** How to use:
@@ -143,10 +144,19 @@ mutators.number = mutators.numeric = mutators.num = mutators.float
 mutators.obj = mutators.object
 mutators.string = mutators.str
 
-// Attach fields to the middleware that needs uses to identify and use other needs middleware
+/**
+ * Builds a function containing the necessary metadata used by Needs to
+ * allow scheme interoperability
+ * 
+ * @param {*} scheme the scheme object 
+ * @param {*} func the middleware function
+ * 
+ * @returns {function} a function containing the necessary metadata
+ */
 function attachMetadata(scheme, func) {
     func.__class = CLASS_FUNCTION
     func[FIELD_SCHEME] = scheme
+    // used to merge a scheme or needs middleware with the current middleware function
     func.including = other => {
         let _scheme = other.__class === CLASS_FUNCTION ? other[FIELD_SCHEME] : buildScheme(other)
         return attachMetadata(mergeSchemes(func[FIELD_SCHEME], _scheme), func.bind())
@@ -154,7 +164,15 @@ function attachMetadata(scheme, func) {
     return func
 }
 
-// Builds the scheme object that is used by needs to validate and format incoming parameters
+/**
+ * Builds the scheme object which Needs uses to validate and format object parameters.
+ * The scheme is a formatted version of the user-defined format of the data.
+ * 
+ * @param {object} _scheme user-defined scheme to build
+ * @param {object} [_parent] parent scheme object for the given subscheme (if one exists)
+ * 
+ * @returns {object} formatted scheme object
+ */
 function buildScheme(_scheme, _parent) {
     let scheme = {}
     
@@ -164,7 +182,7 @@ function buildScheme(_scheme, _parent) {
         let options = { type: null, mutator: null, is_arr: false, length: null,  required: true }
         let lastCharIndex = definition.length - 1
         
-        if (_.isFunction(definition)) {
+        if (_.isFunction(definition)) { // functions are either custom mutators or existing needs schemes
             // If the object is a scheme middleware, just use that scheme
             if (definition.__class === CLASS_FUNCTION) {
                 options.type = definition[FIELD_SCHEME]
@@ -174,6 +192,8 @@ function buildScheme(_scheme, _parent) {
                 options.mutator = definition
             }
         } else if (_.isArray(definition)) {
+            // double-arrays ([[]]) are OR statements, at least one scheme within must be satisfied
+            // single arrays ([]) are sets of acceptable literal values for the field
             if (definition.length === 1 && _.isArray(definition[0])) {
                 let _defs = definition[0]
                 options.type = 'or'
@@ -199,7 +219,7 @@ function buildScheme(_scheme, _parent) {
                     return err
                 }
             }
-        } else if (_.isRegExp(definition)) {
+        } else if (_.isRegExp(definition)) { // a regexp means any provided data must satisfy the provided regular expression
             options.type = 'mutator'
             options.mutator = val => {
                 val = String(val)
@@ -207,10 +227,10 @@ function buildScheme(_scheme, _parent) {
                     ? val
                     : new NeedsError(`Invalid value: ${val}`);
             }
-        } else if (_.isObject(definition)) {
+        } else if (_.isObject(definition)) { // objects are nested schemes, recur
             options.type = buildScheme(definition, current_key)
-        } else if (_.isString(definition)) {
-            if (definition[0] === '[' || definition[0] === '(') {
+        } else if (_.isString(definition)) { // strings can have multiple meanings
+            if (definition[0] === '[' || definition[0] === '(') { //  a string of format [X,Y], (X,Y), [X,Y) or (X,Y] represents a numeric range
                 if (definition[lastCharIndex] !== ']' && definition[lastCharIndex] !== ')') {
                     throw new NeedsError('Invalid range. Range definitions must end in "]" or ")"')
                 }
@@ -226,6 +246,7 @@ function buildScheme(_scheme, _parent) {
                     throw new NeedsError('Invalid values in range. Minimum value must be less than maximum value.')
                 }
 
+                // use mutator function for checking if the provided value is within a given range
                 options.type = 'mutator'
                 options.mutator = val => {
                     val = parseFloat(val)
@@ -235,7 +256,7 @@ function buildScheme(_scheme, _parent) {
                         return new NeedsError(`Invalid value "${val}" for range ${min_inclusive?'[':'('}${min},${max}${max_inclusive?']':')'}`)
                     }
                 }
-            } else if (definition[lastCharIndex] === ']') {
+            } else if (definition[lastCharIndex] === ']') { // a string format of T[X] is an array of type T of optional max length X
                 let arrBegin = definition.indexOf('[')
                 options.is_arr = true
                 
@@ -281,13 +302,28 @@ function buildScheme(_scheme, _parent) {
     return scheme
 }
 
+/**
+ * Utility function for checking if object is empty, i.e. has no properties
+ * 
+ * @param {object} obj
+ * 
+ * @returns {boolean} true if object has no properties, else false 
+ */
 function isEmpty(obj) {
     if (!obj) return true
     return Object.keys(obj).length === 0
 }
 
+/**
+ * Merges two seperate schemes together to form a single scheme object
+ * 
+ * @param {object} parent scheme being merged into
+ * @param {object} child scheme being merged
+ * 
+ * @returns {object} merged scheme
+ */
 function mergeSchemes(parent, child) {
-    let result = parent //_.cloneDeep(parent)
+    let result = parent //_.cloneDeep(parent) TODO cloneDeep may give some issues w/ cloning functions & function metadata, test further
     for (let key in child) {
         if (result[key] == null) {
             result[key] = child[key]
@@ -298,6 +334,9 @@ function mergeSchemes(parent, child) {
     return result
 }
 
+/**
+ * Class which generates object scheme validator functions/middleware
+ */
 class Needs {
     /**
      * @param options
@@ -351,22 +390,61 @@ class Needs {
         }
     }
 
+    /**
+     * Generate middleware to validate the express request body using the provided scheme
+     * 
+     * @param {object} scheme
+     * 
+     * @returns {function} middleware 
+     */
     body(scheme) {
         return this.__middleware(scheme, 'body')
     }
     
+    /**
+     * Generate middleware to validate the express request headers using the provided scheme
+     * 
+     * @param {object} scheme
+     * 
+     * @returns {function} middleware 
+     */
     headers(scheme) {
         return this.__middleware(scheme, 'headers')
     }
-
+    
+    /**
+     * Generate middleware to validate the express request query string using the provided scheme
+     * 
+     * @param {object} scheme
+     * 
+     * @returns {function} middleware 
+     */
     querystring(scheme) {
         return this.__middleware(scheme, 'query')
     }
     
+    /**
+     * Generate middleware to validate the express request URL parameters (e.g. id in /user/:id/update) using the provided scheme
+     * 
+     * @param {object} scheme
+     * 
+     * @returns {function} middleware 
+     */
     spat(scheme) {
         return this.__middleware(scheme, 'params')
     }
     
+    /**
+     * Validate that the given data follows the given scheme, else return an error
+     * 
+     * NOTE: This function will mutate the data parameter, not return a new object
+     * 
+     * @param {object} scheme scheme used for validation
+     * @param {*} data data to validate
+     * @param {*} _parent private, used for generating bracket-notation parameter names (e.g. user[name][first])
+     * 
+     * @returns {undefined|NeedsError} on failure, returns error. Else, returns nothing
+     */
     validate(scheme, data = {}, _parent) {
         let count = 0 // Counter used to count processed fields and detect any extraneous fields
         
@@ -407,8 +485,11 @@ class Needs {
                     }
                     if (err) return err
                 } else {
+                    // get the mutator function
+                    // if a custom mutator was provided, use that, else, look up the mutator within `mutators` based on the type (e.g. str/string, int/integer, bool/boolean, etc)
                     let func = (scheme[key].type === 'mutator' || scheme[key].type === 'set') ? scheme[key].mutator : mutators[scheme[key].type]
 
+                    // if the scheme requires an array of values that satisfy the provided mutator, apply the mutator to each object in the array and check for errors
                     if (scheme[key].is_arr) {
                         if (!Array.isArray(data[key])) data[key] = [data[key]]
                         if (scheme[key].length && data[key].length !== scheme[key].length) {
@@ -429,7 +510,7 @@ class Needs {
 
                             data[key][i] = result
                         }
-                    } else {
+                    } else { // if not an array, apply the mutator in `func` to the value at field `key`
                         let result = func(data[key], scheme[key].length)
 
                         if (result instanceof Error) {
@@ -442,7 +523,7 @@ class Needs {
                 }
                 
                 ++count
-            } else if (scheme[key].required) {
+            } else if (scheme[key].required) { // if a key specified in the scheme does not appear in the data and is required by the scheme, fail
                 let err = new NeedsError('Missing expected parameter')
                 err.name = ETYPES.PARAM_EXPECTED
                 err.param_names = _current
@@ -451,6 +532,14 @@ class Needs {
         }
     }
 
+    /**
+     * Generates middleware for formatting request data
+     * 
+     * @param {object} scheme 
+     * @param {string} data_key the location in the request object of the data (e.g. body, query, params, etc)
+     * 
+     * @returns {function} express middleware
+     */
     __middleware(scheme, data_key = 'body') {
         scheme = buildScheme(scheme)
         return attachMetadata(scheme, (req, res, next) => {

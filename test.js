@@ -1,76 +1,77 @@
 'use strict'
 
-const 
-    Needs = require('./index.js'),
+// TODO implement testing framework
 
-    needs = Needs({ strict: false }),
-    needs_strict = Needs({ strict: true }),
+const Needs = require('./index.js')
+
+const needs = Needs({ strict: false })
+const needs_strict = Needs({ strict: true })
         
-    testScheme = {
-        a: 'int',
-        b: 'boolean[3]',
-        c: 'str',
-        d: {
-            e: 'float',
-            f_: 'num'
-        },
-        g_: {
-            h: 'datetime',
-            i: 'int',
-            j_: 'float'
-        },
-        k: 'datetime[]',
-        l: ['one', 2, 0x3, '4'],
-        m: [['int', 'null']],
-        n: [1, 2, 3, 4, 5],
-        o: 'obj'
+const testScheme = {
+    a: 'int',
+    b: 'boolean[3]',
+    c: 'str',
+    d: {
+        e: 'float',
+        f_: 'num'
     },
-    dataPass = {
-        a: 55,
-        b: [true, true, false],
-        c: 'test',
-        d: {
-            e: 34857.534,
-            f: -300
-        },
-        g: {
-            h: new Date(),
-            i: 3,
-            // j: 34.34
-        },
-        k: [ new Date(), new Date() ],
-        l: 0x3,
-        m: 'null',
-        n: '3',
-        o: {
-            random: {
-                js: {
-                    object: {
-                        for: 'you'
-                    }
+    g_: {
+        h: 'datetime',
+        i: 'int',
+        j_: 'float'
+    },
+    k: 'datetime[]',
+    l: ['one', 2, 0x3, '4'],
+    m: [['int', 'null']],
+    n: [1, 2, 3, 4, 5],
+    o: 'obj'
+}
+const dataPass = {
+    a: 55,
+    b: [true, true, false],
+    c: 'test',
+    d: {
+        e: 34857.534,
+        f: -300
+    },
+    g: {
+        h: new Date(),
+        i: 3,
+        // j: 34.34
+    },
+    k: [ new Date(), new Date() ],
+    l: 0x3,
+    m: 'null',
+    n: '3',
+    o: {
+        random: {
+            js: {
+                object: {
+                    for: 'you'
                 }
             }
         }
-    },
-    dataFail = {
-        a: 55,
-        b: [true, false, false],
-        // c: 'test',
-        d: {
-            e: 34857.534,
-            f: 'boop'
-        },
-        g: {
-            h: new Date(),
-            i: 3.14159,
-            j: 34.34
-        },
-        k: [ new Date(), 7 ],
-        l: 8,
-        m: 0,
-        n: 3,
-        o: {}
     }
+}
+const dataFail = {
+    a: 55,
+    b: [true, false, false],
+    // c: 'test',
+    d: {
+        e: 34857.534,
+        f: 'boop'
+    },
+    g: {
+        h: new Date(),
+        i: 3.14159,
+        j: 34.34
+    },
+    k: [ new Date(), 7 ],
+    l: 8,
+    m: 0,
+    n: 3,
+    o: {}
+}
 
 
 /**
